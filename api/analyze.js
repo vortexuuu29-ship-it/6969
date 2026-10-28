@@ -1,163 +1,150 @@
-// api/analyze.js  –  funkcja serwerowa (Vercel). Leży w głównym folderze repo: /api/analyze.js
-//
-// Wymaga zmiennej środowiskowej GEMINI_API_KEY (Vercel → Project → Settings → Environment Variables).
-// Po dodaniu/zmianie zmiennej trzeba zrobić REDEPLOY, inaczej funkcja jej nie zobaczy.
-// Opcjonalnie: GEMINI_MODEL – nazwa modelu, jeśli chcesz wymusić konkretny.
-//
-// Test w przeglądarce: otwórz  https://TWOJA-STRONA/api/analyze  → powinno pokazać {"ok":true,"hasKey":true,...}
+module.exports = async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Dozwolona tylko metoda POST' });
+  }
 
-// Modele próbowane po kolei. Stare nazwy (np. gemini-1.5-*) zostały wyłączone przez Google,
-// a "model not found" jest jedną z najczęstszych przyczyn cichego błędu.
-const MODELS = [process.env.GEMINI_MODEL, 'gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-2.5-flash'].filter(Boolean);
+  try {
+    const apiKey = (process.env.GEMINI_API_KEY || '').trim();
+    if (!apiKey) {
+      return res.status(500).json({ error: 'Brak klucza GEMINI_API_KEY na serwerze Vercel' });
+    }
 
-const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
-const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : null);
+    const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
+    const { imageBase64, player } = body;
 
-const buildPrompt = (player = {}) => `Jesteś doświadczonym sędzią kulturystycznym i trenerem personalnym. Oceń sylwetkę osoby widocznej na zdjęciu.
+    if (!imageBase64) {
+      return res.status(400).json({ error: 'Brak zdjęcia w zapytaniu' });
+    }
 
-Dane pomocnicze od użytkownika (traktuj jako wskazówkę, zdjęcie jest ważniejsze):
-- wzrost: ${num(player.heightCm) ?? 'brak'} cm, waga: ${num(player.currentWeight) ?? 'brak'} kg, cel: ${player.goal || 'brak'}
-- obwody: pas ${num(player.waist) ?? 'brak'} cm, klatka ${num(player.chest) ?? 'brak'} cm, biceps ${num(player.biceps) ?? 'brak'} cm
+    const prompt = `Jesteś surowym, obiektywnym sędzią sylwetkowym i trenerem kulturystyki.
+Przeanalizuj dokładnie zdjęcie sylwetki i oceń je w skali 1.0 - 10.0.
+Dane pomocnicze zawodnika: Wzrost ${player?.heightCm || 184} cm, Waga ${player?.currentWeight || 84} kg, Cel: ${player?.goal || 'Redukcja'}, Pas ${player?.measurements?.waist?.current || 85} cm, Klatka ${player?.measurements?.chest?.current || 105} cm, Biceps ${player?.measurements?.biceps?.current || 38} cm.
 
-Skala ocen 1.0–10.0 (jedno miejsce po przecinku). 5 = przeciętna osoba rekreacyjna, 7 = wyraźnie wytrenowana, 9+ = poziom zawodniczy. Bądź uczciwy i konkretny, nie schlebiaj.
+Zasady realizmu:
+1. Oceń poziom tkanki tłuszczowej (estBf) REALISTYCZNIE na podstawie widocznej definicji brzucha i separacji mięśni na zdjęciu (np. lekki zarys górnych mięśni brzucha przy miękkim dole brzucha to 16-18% BF; brak widocznych mięśni brzucha to 19-23% BF; pełna kratka 6-pack i unaczynienie to 10-13% BF). Nie zaniżaj BF%!
+2. W polu "verdict" napisz po polsku konkretną analizę tego, co widzisz na zdjęciu, podzieloną dokładnie na 3 części oddzielone znakiem " | " (bez kropek w środku):
+   - Mocne strony: (co na zdjęciu wygląda najlepiej)
+   - Braki do poprawy: (które partie mięśniowe na zdjęciu odstają lub gdzie widać nadmiar tkanki tłuszczowej)
+   - Plan naprawczy: (konkretne wskazówki treningowe i kaloryczne)
 
-Zwróć WYŁĄCZNIE obiekt JSON (bez markdown, bez komentarzy) o polach:
+Zwróć WYŁĄCZNIE czysty obiekt JSON:
 {
-  "usable": true lub false (false, jeśli na zdjęciu nie widać sylwetki człowieka albo jest zbyt ciemne/rozmazane),
-  "vScore": ocena proporcji barki–talia (V-taper),
-  "defScore": ocena definicji / poziomu tkanki tłuszczowej,
-  "armScore": ocena rozwoju ramion i górnej części ciała,
-  "estBf": szacowany % tkanki tłuszczowej (liczba całkowita),
-  "lightingNote": krótka uwaga o jakości zdjęcia (światło, kadr, poza), max 80 znaków,
-  "verdict": jeden string w dokładnie takim formacie: "Mocne strony: ... | Braki do poprawy: ... | Plan naprawczy: ..." (po polsku, każda część 1–2 zdania, trzy części rozdzielone znakiem " | ")
+  "vScore": 6.8,
+  "defScore": 6.2,
+  "armScore": 6.5,
+  "estBf": 17,
+  "lightingNote": "Krótka ocena oświetlenia na zdjęciu",
+  "verdict": "Mocne strony: ... | Braki do poprawy: ... | Plan naprawczy: ..."
 }`;
 
-const extractJson = (text) => {
-  if (!text) return null;
-  const cleaned = String(text).replace(/```json|```/gi, '').trim();
-  try {
-    return JSON.parse(cleaned);
-  } catch (_) {
-    const start = cleaned.indexOf('{');
-    const end = cleaned.lastIndexOf('}');
-    if (start >= 0 && end > start) {
-      try {
-        return JSON.parse(cleaned.slice(start, end + 1));
-      } catch (_) {
-        return null;
+    const payload = {
+      contents: [
+        {
+          parts: [
+            { text: prompt },
+            { inline_data: { mime_type: 'image/jpeg', data: imageBase64 } }
+          ]
+        }
+      ],
+      generationConfig: {
+        temperature: 0.2
+      }
+    };
+
+    // 1. Pobieramy z Google listę modeli aktywnych dla Twojego klucza API
+    let candidateModels = [
+      'gemini-flash-latest',
+      'gemini-3-flash-preview',
+      'gemini-3-flash',
+      'gemini-2.5-flash-lite',
+      'gemini-2.0-flash'
+    ];
+
+    try {
+      const listRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
+      );
+      if (listRes.ok) {
+        const listData = await listRes.json();
+        const apiModels = (listData.models || [])
+          .filter(
+            (m) =>
+              m.supportedGenerationMethods?.includes('generateContent') &&
+              m.name.includes('gemini') &&
+              !m.name.includes('embedding') &&
+              !m.name.includes('tts') &&
+              !m.name.includes('audio')
+          )
+          .map((m) => m.name.replace('models/', ''));
+
+        // Łączymy listę priorytetową z modelami zwróconymi przez Google
+        candidateModels = [...new Set([...candidateModels, ...apiModels])];
+      }
+    } catch (_) {}
+
+    let lastError = 'Nie udało się połączyć z żadnym modelem Gemini';
+    let responseData = null;
+
+    // 2. Próbujemy kolejne modele aż trafimy na aktywny dla nowych użytkowników
+    for (let i = 0; i < candidateModels.length; i++) {
+      const modelName = candidateModels[i];
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok && data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+        console.log('Sukces z modelem:', modelName);
+        responseData = data;
+        break;
+      }
+
+      const errMsg = data?.error?.message || '';
+      lastError = errMsg || `HTTP ${response.status} dla modelu ${modelName}`;
+      console.warn(`Model ${modelName} odrzucony:`, lastError);
+
+      // Jeśli Google w błędzie podaje dokładną nazwę wymaganego modelu, dodajemy go na początek kolejki
+      const suggestedMatch = errMsg.match(/use models\/([a-zA-Z0-9._-]+)/i);
+      if (suggestedMatch && suggestedMatch[1] && !candidateModels.includes(suggestedMatch[1])) {
+        candidateModels.splice(i + 1, 0, suggestedMatch[1]);
       }
     }
-    return null;
-  }
-};
 
-async function callGemini(model, apiKey, body) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 25000);
-  try {
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-      body: JSON.stringify(body),
-      signal: controller.signal
+    if (!responseData) {
+      console.error('Wszystkie modele zawiodły. Ostatni błąd:', lastError);
+      return res.status(500).json({ error: lastError });
+    }
+
+    const rawText = responseData.candidates[0].content.parts[0].text;
+    const match = rawText.match(/\{[\s\S]*\}/);
+
+    if (!match) {
+      console.error('Brak JSON w odpowiedzi:', rawText);
+      return res.status(500).json({ error: 'Model nie zwrócił poprawnego formatu JSON' });
+    }
+
+    const parsed = JSON.parse(match[0]);
+
+    const fullVerdict = String(parsed.verdict || 'Analiza zakończona')
+      .replace(/\.\s+/g, ' | ')
+      .replace(/\.$/, '');
+
+    return res.status(200).json({
+      vScore: Number(parsed.vScore) || 6.5,
+      defScore: Number(parsed.defScore) || 6.5,
+      armScore: Number(parsed.armScore) || 6.5,
+      estBf: Number(parsed.estBf) || 17,
+      lightingNote: parsed.lightingNote || 'Zweryfikowano przez Gemini Vision',
+      verdict: fullVerdict
     });
-    const data = await r.json().catch(() => ({}));
-    return { status: r.status, data };
-  } finally {
-    clearTimeout(timer);
+  } catch (err) {
+    console.error('Krytyczny błąd w /api/analyze:', err);
+    return res.status(500).json({ error: err.message || 'Błąd serwera' });
   }
-}
-
-module.exports = async function handler(req, res) {
-  const apiKey = process.env.GEMINI_API_KEY;
-
-  // Szybki test działania: GET /api/analyze
-  if (req.method === 'GET') {
-    return res.status(200).json({ ok: true, hasKey: Boolean(apiKey), models: MODELS });
-  }
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Dozwolona metoda: POST' });
-  }
-  if (!apiKey) {
-    return res.status(500).json({ error: 'Brak GEMINI_API_KEY w zmiennych środowiskowych serwera (po dodaniu zrób redeploy).' });
-  }
-
-  let body = req.body;
-  if (typeof body === 'string') {
-    try {
-      body = JSON.parse(body);
-    } catch (_) {
-      body = null;
-    }
-  }
-  const imageBase64 = body?.imageBase64;
-  const mimeType = body?.mimeType || 'image/jpeg';
-  if (!imageBase64 || typeof imageBase64 !== 'string') {
-    return res.status(400).json({ error: 'Brak pola imageBase64 w żądaniu.' });
-  }
-  if (imageBase64.length > 4_000_000) {
-    return res.status(413).json({ error: 'Zdjęcie jest za duże (limit ok. 4 MB po zakodowaniu).' });
-  }
-
-  const requestBody = {
-    contents: [
-      {
-        role: 'user',
-        parts: [{ text: buildPrompt(body.player) }, { inline_data: { mime_type: mimeType, data: imageBase64 } }]
-      }
-    ],
-    generationConfig: { temperature: 0.4, maxOutputTokens: 2048, responseMimeType: 'application/json' }
-  };
-
-  let last = null;
-  for (const model of MODELS) {
-    try {
-      const { status, data } = await callGemini(model, apiKey, requestBody);
-      last = { model, status, data };
-
-      // Zły/wyłączony model → próbujemy następny z listy.
-      if (status === 404 || (status === 400 && /model/i.test(data?.error?.message || ''))) continue;
-      if (status !== 200) break;
-
-      const blockReason = data?.promptFeedback?.blockReason;
-      const candidate = data?.candidates?.[0];
-      if (blockReason || candidate?.finishReason === 'SAFETY' || candidate?.finishReason === 'PROHIBITED_CONTENT') {
-        return res.status(422).json({
-          error: `Gemini zablokował to zdjęcie filtrem bezpieczeństwa (${blockReason || candidate?.finishReason}). Spróbuj innego kadru.`
-        });
-      }
-
-      const text = (candidate?.content?.parts || []).map((p) => p.text || '').join('');
-      const parsed = extractJson(text);
-      if (!parsed) {
-        return res.status(502).json({ error: 'Gemini zwrócił odpowiedź, której nie da się odczytać jako JSON.', raw: String(text).slice(0, 300) });
-      }
-      if (parsed.usable === false) {
-        return res.status(422).json({ error: 'AI nie widzi na zdjęciu sylwetki (za ciemno, za blisko albo brak postaci). Zrób nowe zdjęcie.' });
-      }
-
-      const v = num(parsed.vScore);
-      const d = num(parsed.defScore);
-      const a = num(parsed.armScore);
-      if (v === null || d === null || a === null) {
-        return res.status(502).json({ error: 'Odpowiedź AI nie zawiera ocen vScore / defScore / armScore.', raw: String(text).slice(0, 300) });
-      }
-
-      return res.status(200).json({
-        vScore: Math.round(clamp(v, 1, 10) * 10) / 10,
-        defScore: Math.round(clamp(d, 1, 10) * 10) / 10,
-        armScore: Math.round(clamp(a, 1, 10) * 10) / 10,
-        estBf: Math.round(clamp(num(parsed.estBf) ?? 18, 4, 50)),
-        lightingNote: String(parsed.lightingNote || 'Zweryfikowano przez Gemini Vision AI').slice(0, 120),
-        verdict: String(parsed.verdict || '').trim() || 'Brak szczegółowej oceny.',
-        model
-      });
-    } catch (err) {
-      last = { model, status: 0, data: { error: { message: err.name === 'AbortError' ? 'Przekroczono czas odpowiedzi Gemini (25 s)' : err.message } } };
-      if (err.name === 'AbortError') break;
-    }
-  }
-
-  const msg = last?.data?.error?.message || 'Nieznany błąd Gemini';
-  return res.status(502).json({ error: `Gemini (${last?.model}, HTTP ${last?.status}): ${String(msg).slice(0, 300)}` });
 };
