@@ -341,13 +341,126 @@ const evaluatePhysiqueAI = (player, photoIdx = 0) => {
 
 // Skaner ze wsparciem przybliżenia (zoomFactor: 1.0, 1.4, 1.8) i wyższą rozdzielczością 900px
 const autoEvaluateUploadedPhoto = (file, playerContext, zoomFactor = 1.0) => {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
+    const fallbackToLocal = () => {
+      const baseEval = evaluatePhysiqueAI(playerContext);
+      resolve({
+        dataUrl: createDemoPhysiquePoster(
+          playerContext.name || 'Gracz',
+          playerContext.goal || 'Redukcja',
+          playerContext.currentWeight || 84,
+          playerContext.measurements?.waist?.current || 85,
+          playerContext.measurements?.chest?.current || 105,
+          '#e11d48'
+        ),
+        aiVision: {
+          overall: baseEval.overall,
+          vScore: parseFloat(baseEval.vScore),
+          defScore: parseFloat(baseEval.defScore),
+          armScore: parseFloat(baseEval.armScore),
+          estBf: baseEval.estBf,
+          lightingNote: 'Tryb awaryjny',
+          verdict: baseEval.summary,
+          source: 'Analizator Biometryczny AI'
+        }
+      });
+    };
+
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
       img.onload = async () => {
         const canvas = document.createElement('canvas');
-        const maxH = 900;
+        const maxH = 600;
+
+        const cropW = img.width / zoomFactor;
+        const cropH = img.height / zoomFactor;
+        const startX = (img.width - cropW) / 2;
+        const startY = (img.height - cropH) * 0.42;
+
+        const scale = Math.min(1, maxH / cropH);
+        canvas.width = Math.max(1, Math.round(cropW * scale));
+        canvas.height = Math.max(1, Math.round(cropH * scale));
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, startX, startY, cropW, cropH, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.78);
+
+        // Wysyłamy wyłącznie lekkie liczby (bez tablicy starych zdjęć!) + zabezpieczenie 14s
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 14000);
+
+        try {
+          const res = await fetch('/api/analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal,
+            body: JSON.stringify({
+              imageBase64: dataUrl.split(',')[1],
+              player: {
+                heightCm: playerContext.heightCm,
+                currentWeight: playerContext.currentWeight,
+                goal: playerContext.goal,
+                waist: playerContext.measurements?.waist?.current,
+                chest: playerContext.measurements?.chest?.current,
+                biceps: playerContext.measurements?.biceps?.current
+              }
+            })
+          });
+          clearTimeout(timeoutId);
+
+          if (res.ok) {
+            const serverAI = await res.json();
+            if (serverAI && serverAI.vScore) {
+              const overall = (
+                Number(serverAI.vScore) * 0.4 +
+                Number(serverAI.defScore) * 0.35 +
+                Number(serverAI.armScore) * 0.25
+              ).toFixed(1);
+
+              resolve({
+                dataUrl,
+                aiVision: {
+                  vScore: Number(serverAI.vScore).toFixed(1),
+                  defScore: Number(serverAI.defScore).toFixed(1),
+                  armScore: Number(serverAI.armScore).toFixed(1),
+                  estBf: serverAI.estBf || 18,
+                  lightingNote: serverAI.lightingNote || 'Zweryfikowano przez Gemini Vision AI',
+                  verdict: serverAI.verdict,
+                  overall: parseFloat(overall),
+                  source: 'Gemini Vision AI (Chmura)'
+                }
+              });
+              return;
+            }
+          }
+        } catch (err) {
+          clearTimeout(timeoutId);
+          console.warn('Przełączono na analizę lokalną:', err.message);
+        }
+
+        const baseEval = evaluatePhysiqueAI(playerContext);
+        resolve({
+          dataUrl,
+          aiVision: {
+            overall: baseEval.overall,
+            vScore: parseFloat(baseEval.vScore),
+            defScore: parseFloat(baseEval.defScore),
+            armScore: parseFloat(baseEval.armScore),
+            estBf: baseEval.estBf,
+            lightingNote: 'Analiza proporcji zakończona',
+            verdict: baseEval.summary,
+            source: 'Analizator Biometryczny AI'
+          }
+        });
+      };
+      img.onerror = fallbackToLocal;
+      img.src = e.target.result;
+    };
+    reader.onerror = fallbackToLocal;
+    reader.readAsDataURL(file);
+  });
+};
 
         // Wycinanie środka kadru (lekko powyżej połowy wysokości, gdzie znajduje się tułów)
         const cropW = img.width / zoomFactor;
