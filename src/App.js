@@ -1,10 +1,10 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 
 // ============================================================================
-// 0. DANE Z SUPABASE (Wklej tutaj swój URL i klucz anon public pomiędzy '')
+// 0. DANE Z SUPABASE (Pobierane z Vercel lub wpisane poniżej w '')
 // ============================================================================
-const DEFAULT_SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL || 'https://syxtkmwvudpjojhbbjwp.supabase.co/rest/v1/';
-const DEFAULT_SUPABASE_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5eHRrbXd2dWRwam9qaGJiandwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMzUxOTMsImV4cCI6MjEwODYxMTE5M30.drElt0CdI57MGBFQgeawf2zt6VGFbCCSRjGMezKgpZ4';
+const DEFAULT_SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL || '';
+const DEFAULT_SUPABASE_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY || '';
 
 // ============================================================================
 // 1. WBUDOWANE IKONY SVG
@@ -97,6 +97,14 @@ const Icon = ({ name, className = 'w-4 h-4' }) => {
         <path d="m16 21 4-4-4-4" />
         <path d="M20 17H4" />
       </>
+    ),
+    refresh: (
+      <>
+        <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+        <path d="M3 3v5h5" />
+        <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+        <path d="M16 16h5v5" />
+      </>
     )
   };
 
@@ -117,7 +125,7 @@ const Icon = ({ name, className = 'w-4 h-4' }) => {
 };
 
 // ============================================================================
-// 2. MOTYWY (CZERWONY I ŻÓŁTY) ORAZ STAŁA CZCIONKA CLEAN MODERN
+// 2. MOTYWY (CZERWONY I ŻÓŁTY) ORAZ CZCIONKA CLEAN MODERN
 // ============================================================================
 const THEMES = {
   berserk: {
@@ -183,7 +191,7 @@ const PAL_LEVELS = [
 ];
 
 // ============================================================================
-// 3. OBLICZENIA BIOMETRYCZNE, BMI, CPM, DOTS, 1RM I SKANER ZDJĘĆ AI
+// 3. OBLICZENIA BIOMETRYCZNE, MAKRO, BMI, CPM, DOTS, 1RM I SKANER ZDJĘĆ Z ZOOMEM
 // ============================================================================
 const createDemoPhysiquePoster = (name, goal, weight, waist, chest, accentHex) => {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" width="400" height="500">
@@ -240,10 +248,23 @@ const calcCPMData = (weightKg, heightCm, age = 22, sex = 'M', pal = 1.55) => {
   };
 };
 
-const evaluatePhysiqueAI = (player) => {
-  const latestPhoto = player.photos?.[0];
+// Wyliczanie pełnego Makro (Białko / Tłuszcze / Węglowodany)
+const calcMacros = (kcal, weightKg, customProtein) => {
+  const protein = customProtein || Math.round(weightKg * 2.1);
+  const fat = Math.round(weightKg * 0.9);
+  const remainingKcal = Math.max(0, kcal - protein * 4 - fat * 9);
+  const carbs = Math.round(remainingKcal / 4);
+  return { protein, fat, carbs };
+};
+
+// Poprawiona funkcja oceny AI + REALNY progres względem poprzedniego zdjęcia
+const evaluatePhysiqueAI = (player, photoIdx = 0) => {
+  const photos = player.photos || [];
+  const selectedPhoto = photos[photoIdx] || photos[0];
+  const prevPhoto = photos[photoIdx + 1];
+
   const height = player.heightCm || 180;
-  const waist = player.measurements?.waist?.current || 85;
+  const waist = selectedPhoto?.waist || player.measurements?.waist?.current || 85;
   const chest = player.measurements?.chest?.current || 105;
   const biceps = player.measurements?.biceps?.current || 38;
 
@@ -255,72 +276,93 @@ const evaluatePhysiqueAI = (player) => {
   const bioDefScore = Math.min(10, Math.max(3, ((0.55 - whtr) / (0.55 - 0.42)) * 7 + 3));
   const bioArmScore = Math.min(10, Math.max(3, ((armToWaist - 0.40) / (0.53 - 0.40)) * 7 + 3));
 
-  const waistDelta = (player.measurements?.waist?.start || waist) - waist;
-  const bicDelta = biceps - (player.measurements?.biceps?.start || biceps);
-  const progScore = Math.min(10, Math.max(5, 6.8 + waistDelta * 0.4 + bicDelta * 0.8));
-
-  const vScore = latestPhoto?.aiVision?.vScore
-    ? Number(latestPhoto.aiVision.vScore).toFixed(1)
+  const vScore = selectedPhoto?.aiVision?.vScore
+    ? Number(selectedPhoto.aiVision.vScore).toFixed(1)
     : bioVScore.toFixed(1);
-  const defScore = latestPhoto?.aiVision?.defScore
-    ? Number(latestPhoto.aiVision.defScore).toFixed(1)
+  const defScore = selectedPhoto?.aiVision?.defScore
+    ? Number(selectedPhoto.aiVision.defScore).toFixed(1)
     : bioDefScore.toFixed(1);
-  const armScore = latestPhoto?.aiVision?.armScore
-    ? Number(latestPhoto.aiVision.armScore).toFixed(1)
+  const armScore = selectedPhoto?.aiVision?.armScore
+    ? Number(selectedPhoto.aiVision.armScore).toFixed(1)
     : bioArmScore.toFixed(1);
 
-  const overall = latestPhoto?.aiVision?.overall
-    ? Number(latestPhoto.aiVision.overall).toFixed(1)
+  const overall = selectedPhoto?.aiVision?.overall
+    ? Number(selectedPhoto.aiVision.overall).toFixed(1)
     : (
-        parseFloat(vScore) * 0.35 +
-        parseFloat(defScore) * 0.3 +
-        parseFloat(armScore) * 0.2 +
-        progScore * 0.15
+        parseFloat(vScore) * 0.4 +
+        parseFloat(defScore) * 0.35 +
+        parseFloat(armScore) * 0.25
       ).toFixed(1);
 
-  const estBf =
-    latestPhoto?.aiVision?.estBf ||
-    Math.round(Math.max(8, Math.min(28, (whtr - 0.36) * 110)));
+  // Realny progres porównujący aktualne zdjęcie z poprzednim zdjęciem w galerii
+  let progressLabel = 'Zdjęcie bazowe (#1)';
+  let progressTone = 'text-neutral-300';
+  if (prevPhoto) {
+    const prevOverall = prevPhoto?.aiVision?.overall
+      ? Number(prevPhoto.aiVision.overall)
+      : parseFloat(overall);
+    const diff = (parseFloat(overall) - prevOverall).toFixed(1);
+    const weightDiff = ((selectedPhoto?.weight || player.currentWeight) - (prevPhoto?.weight || player.currentWeight)).toFixed(1);
+    if (parseFloat(diff) > 0) {
+      progressLabel = `+${diff} pkt (${weightDiff > 0 ? `+${weightDiff}` : weightDiff} kg)`;
+      progressTone = 'text-emerald-400';
+    } else if (parseFloat(diff) < 0) {
+      progressLabel = `${diff} pkt (${weightDiff > 0 ? `+${weightDiff}` : weightDiff} kg)`;
+      progressTone = 'text-rose-400';
+    } else {
+      progressLabel = `0.0 pkt (${weightDiff > 0 ? `+${weightDiff}` : weightDiff} kg)`;
+    }
+  }
 
-  // Szczegółowa analiza awaryjna (gdy serwer nie odpowie), wskazująca mocne strony, braki i plan naprawczy
+  // Realistyczny szacunek BF% (przy 184 cm i 85 cm w pasie daje ~17-18%, a nie 11%)
+  const realisticFallbackBf = Math.round(Math.max(9, Math.min(30, (whtr - 0.335) * 140)));
+  const estBf = selectedPhoto?.aiVision?.estBf || realisticFallbackBf;
+
   const fallbackDetailedVerdict =
     vTaper < 1.26
-      ? `Mocne strony: Dobra kontrola obwodu pasa (${waist} cm) przy wadze ${player.currentWeight} kg | Braki do poprawy: Zbyt mała różnica między obwodem klatki (${chest} cm) a talią (V-Taper ${vTaper.toFixed(2)}), brakuje szerokości najszerszego grzbietu oraz bocznego aktonu barków | Plan naprawczy: Dodaj 2x w tygodniu podciąganie szeroko lub ściąganie drążka (4 serie po 8-12 powt.) oraz wznosy bokiem z hantlami (4x15)`
-      : whtr > 0.48
-      ? `Mocne strony: Solidna masa mięśniowa górnej obręczy i ramion (${biceps} cm) | Braki do poprawy: Zbyt wysoki obwód pasa względem wzrostu (${waist} cm), który zasłania definicję brzucha i obniża wizualny V-Taper | Plan naprawczy: Utrzymaj deficyt -350 kcal względem swojego CPM oraz minimum 9 000 kroków dziennie do zejścia poniżej ${Math.round(height * 0.45)} cm w talii`
-      : `Mocne strony: Dobre proporcje V-Taper (${vTaper.toFixed(2)}) i widoczny zarys sylwetki | Braki do poprawy: Górna część klatki piersiowej (część obojczykowa) oraz separacja ramion od barków wymagają większej objętości | Plan naprawczy: Priorytet na wyciskanie hantli na skosie dodatnim (30 stopni) na początku treningu Push oraz kontrola białka na poziomie ${Math.round(player.currentWeight * 2.1)} g dziennie`;
+      ? `Mocne strony: Kontrola obwodu pasa (${waist} cm) przy masie ${player.currentWeight} kg | Braki do poprawy: Mała różnica między obwodem klatki (${chest} cm) a talią (V-Taper ${vTaper.toFixed(2)}), brakuje szerokości najszerszego grzbietu oraz bocznego aktonu barków | Plan naprawczy: Dodaj 2x w tygodniu podciąganie szeroko lub ściąganie drążka (4 serie po 8-12 powt.) oraz wznosy bokiem z hantlami (4x15)`
+      : `Mocne strony: Dobre proporcje V-Taper (${vTaper.toFixed(2)}) i widoczny zarys sylwetki | Braki do poprawy: Dolna część brzucha oraz separacja mięśnia naramiennego wymagają dalszej redukcji tkanki tłuszczowej | Plan naprawczy: Utrzymaj deficyt kaloryczny 300-400 kcal oraz priorytet na boczny akton barku i górną część klatki`;
 
   return {
     overall: parseFloat(overall),
     vScore,
     defScore,
     armScore,
-    progScore: progScore.toFixed(1),
+    progressLabel,
+    progressTone,
     vTaper: vTaper.toFixed(2),
     whtr: whtr.toFixed(2),
     estBf,
-    lightingNote: latestPhoto?.aiVision?.lightingNote || 'Zweryfikowano biometrycznie',
-    summary: latestPhoto?.aiVision?.verdict || fallbackDetailedVerdict,
-    source: latestPhoto?.aiVision?.source || 'Sędzia Sylwetkowy AI'
+    lightingNote: selectedPhoto?.aiVision?.lightingNote || 'Zweryfikowano biometrycznie',
+    summary: selectedPhoto?.aiVision?.verdict || fallbackDetailedVerdict,
+    source: selectedPhoto?.aiVision?.source || 'Sędzia Sylwetkowy AI'
   };
 };
 
-const autoEvaluateUploadedPhoto = (file, playerContext) => {
+// Skaner ze wsparciem przybliżenia (zoomFactor: 1.0, 1.4, 1.8) i wyższą rozdzielczością 900px
+const autoEvaluateUploadedPhoto = (file, playerContext, zoomFactor = 1.0) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
       img.onload = async () => {
         const canvas = document.createElement('canvas');
-        const maxH = 600;
-        const scale = Math.min(1, maxH / img.height);
-        canvas.width = Math.max(1, Math.round(img.width * scale));
-        canvas.height = Math.max(1, Math.round(img.height * scale));
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.78);
+        const maxH = 900;
 
-        // 1. Wywołanie prawdziwego Gemini Vision AI na serwerze Vercel (/api/analyze)
+        // Wycinanie środka kadru (lekko powyżej połowy wysokości, gdzie znajduje się tułów)
+        const cropW = img.width / zoomFactor;
+        const cropH = img.height / zoomFactor;
+        const startX = (img.width - cropW) / 2;
+        const startY = (img.height - cropH) * 0.42;
+
+        const scale = Math.min(1, maxH / cropH);
+        canvas.width = Math.max(1, Math.round(cropW * scale));
+        canvas.height = Math.max(1, Math.round(cropH * scale));
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, startX, startY, cropW, cropH, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.84);
+
         try {
           const res = await fetch('/api/analyze', {
             method: 'POST',
@@ -346,7 +388,7 @@ const autoEvaluateUploadedPhoto = (file, playerContext) => {
                   vScore: Number(serverAI.vScore).toFixed(1),
                   defScore: Number(serverAI.defScore).toFixed(1),
                   armScore: Number(serverAI.armScore).toFixed(1),
-                  estBf: serverAI.estBf || 14,
+                  estBf: serverAI.estBf || 17,
                   lightingNote: serverAI.lightingNote || 'Zweryfikowano przez Gemini Vision AI',
                   verdict: serverAI.verdict,
                   overall: parseFloat(overall),
@@ -358,7 +400,6 @@ const autoEvaluateUploadedPhoto = (file, playerContext) => {
           }
         } catch (_) {}
 
-        // 2. Tryb awaryjny ze szczegółowym rozpisaniem braków (np. w podglądzie CodeSandbox)
         const baseEval = evaluatePhysiqueAI(playerContext);
         resolve({
           dataUrl,
@@ -437,14 +478,14 @@ const INITIAL_PLAYERS = [
     photos: [
       {
         id: 'ph_olek',
-        date: '27.10.2026',
+        date: '28.10.2026',
         weight: 84.0,
         waist: 85.0,
         note: 'Profil startowy.',
         url: createDemoPhysiquePoster('Olek', 'Redukcja', 84.0, 85.0, 105.0, '#e11d48')
       }
     ],
-    history: [{ date: 'Start', weight: 84.0, waist: 85.0, bench1RM: 93, kcal: 2500 }]
+    history: [{ date: 'Start', weight: 84.0, waist: 85.0, bench1RM: 93, kcal: 2500, aiScore: 5.1 }]
   }
 ];
 
@@ -467,7 +508,6 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('ai_physique');
   const [sortBy, setSortBy] = useState('ai');
 
-  // Zapisywany na stałe wybór koloru (domyślnie Czerwony - 'berserk', do wyboru Żółty - 'sovereign')
   const [themeKey, setThemeKey] = useState(() => {
     const savedTheme = localStorage.getItem('iron_archive_theme');
     return savedTheme && THEMES[savedTheme] ? savedTheme : 'berserk';
@@ -475,6 +515,10 @@ export default function App() {
 
   const [sbUrl] = useState(() => DEFAULT_SUPABASE_URL || localStorage.getItem('iron_sb_url') || '');
   const [sbKey] = useState(() => DEFAULT_SUPABASE_KEY || localStorage.getItem('iron_sb_key') || '');
+  const [cloudSyncStatus, setCloudSyncStatus] = useState('Gotowy');
+
+  // Indeks aktualnie przeglądanego zdjęcia na karcie każdego zawodnika
+  const [photoIdxMap, setPhotoIdxMap] = useState({});
 
   const [lightboxPhoto, setLightboxPhoto] = useState(null);
   const [compA, setCompA] = useState(() => players[0]?.id || 'p_olek');
@@ -500,6 +544,8 @@ export default function App() {
     chest: '105'
   });
 
+  const [rawPhotoFile, setRawPhotoFile] = useState(null);
+  const [photoZoom, setPhotoZoom] = useState(1.0);
   const [bodyForm, setBodyForm] = useState({
     weight: '',
     waist: '',
@@ -523,7 +569,6 @@ export default function App() {
   const activePlayer = players.find((p) => p.id === activeId) || players[0];
   const isLocked = Boolean(pinnedId && pinnedId !== activePlayer?.id);
 
-  // Zapis motywu kolorystycznego oraz aktywnego gracza w pamięci przeglądarki
   useEffect(() => {
     localStorage.setItem('iron_archive_theme', themeKey);
   }, [themeKey]);
@@ -536,69 +581,97 @@ export default function App() {
     localStorage.setItem('iron_archive_pinned', pinnedId || '');
   }, [pinnedId]);
 
-  // Bezpieczna funkcja zapisu: wywoływana TYLKO przy faktycznej zmianie danych przez użytkownika
-  // (Nigdy nie nadpisze chmury domyślnymi wartościami podczas otwierania strony!)
+  // ATOMOWY ZAPIS DO SUPABASE: Pobiera najnowszy stan z chmury przed zapisem,
+  // dzięki czemu koledzy korzystający z aplikacji w tym samym czasie nie nadpiszą sobie nawzajem danych!
   const savePlayersPermanently = async (updater) => {
+    let optimisticNext = [];
     setPlayers((prev) => {
-      const nextPlayers = typeof updater === 'function' ? updater(prev) : updater;
+      optimisticNext = typeof updater === 'function' ? updater(prev) : updater;
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(nextPlayers));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(optimisticNext));
       } catch (_) {}
+      return optimisticNext;
+    });
 
-      if (sbUrl && sbKey) {
-        fetch(`${sbUrl.replace(/\/$/, '')}/rest/v1/squad_state?on_conflict=id`, {
-          method: 'POST',
+    if (!sbUrl || !sbKey) return;
+    setCloudSyncStatus('Zapisywanie...');
+    try {
+      let mergedToSave = optimisticNext;
+      // 1. Pobierz aktualną wersję z chmury, by nie skasować zmian znajomych
+      const getRes = await fetch(
+        `${sbUrl.replace(/\/$/, '')}/rest/v1/squad_state?id=eq.1&select=players`,
+        {
           headers: {
             apikey: sbKey.trim(),
-            Authorization: `Bearer ${sbKey.trim()}`,
-            'Content-Type': 'application/json',
-            Prefer: 'resolution=merge-duplicates'
-          },
-          body: JSON.stringify({
-            id: 1,
-            players: nextPlayers,
-            updated_at: new Date().toISOString()
-          })
-        }).catch(() => {});
-      }
-
-      return nextPlayers;
-    });
-  };
-
-  // Pobranie zapisanego stanu z chmury Supabase przy włączeniu strony
-  useEffect(() => {
-    if (!sbUrl || !sbKey) return;
-    let isMounted = true;
-    const fetchCloud = async () => {
-      try {
-        const res = await fetch(
-          `${sbUrl.replace(/\/$/, '')}/rest/v1/squad_state?id=eq.1&select=players`,
-          {
-            headers: {
-              apikey: sbKey.trim(),
-              Authorization: `Bearer ${sbKey.trim()}`
-            }
-          }
-        );
-        if (res.ok && isMounted) {
-          const data = await res.json();
-          if (data?.[0]?.players && Array.isArray(data[0].players) && data[0].players.length > 0) {
-            setPlayers(data[0].players);
-            try {
-              localStorage.setItem(STORAGE_KEY, JSON.stringify(data[0].players));
-            } catch (_) {}
+            Authorization: `Bearer ${sbKey.trim()}`
           }
         }
-      } catch (_) {}
-    };
-    fetchCloud();
-    return () => {
-      isMounted = false;
-    };
+      );
+      if (getRes.ok) {
+        const cloudData = await getRes.json();
+        const cloudPlayers = cloudData?.[0]?.players;
+        if (Array.isArray(cloudPlayers) && cloudPlayers.length > 0 && typeof updater === 'function') {
+          mergedToSave = updater(cloudPlayers);
+          setPlayers(mergedToSave);
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedToSave));
+          } catch (_) {}
+        }
+      }
+
+      // 2. Wyślij połączone dane z powrotem do Supabase
+      await fetch(`${sbUrl.replace(/\/$/, '')}/rest/v1/squad_state?on_conflict=id`, {
+        method: 'POST',
+        headers: {
+          apikey: sbKey.trim(),
+          Authorization: `Bearer ${sbKey.trim()}`,
+          'Content-Type': 'application/json',
+          Prefer: 'resolution=merge-duplicates'
+        },
+        body: JSON.stringify({
+          id: 1,
+          players: mergedToSave,
+          updated_at: new Date().toISOString()
+        })
+      });
+      setCloudSyncStatus('Zsynchronizowano');
+    } catch (_) {
+      setCloudSyncStatus('Zapis lokalny');
+    }
+  };
+
+  const fetchCloudStateManual = async () => {
+    if (!sbUrl || !sbKey) return;
+    setCloudSyncStatus('Pobieranie...');
+    try {
+      const res = await fetch(
+        `${sbUrl.replace(/\/$/, '')}/rest/v1/squad_state?id=eq.1&select=players`,
+        {
+          headers: {
+            apikey: sbKey.trim(),
+            Authorization: `Bearer ${sbKey.trim()}`
+          }
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.[0]?.players && Array.isArray(data[0].players) && data[0].players.length > 0) {
+          setPlayers(data[0].players);
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data[0].players));
+          } catch (_) {}
+          setCloudSyncStatus('Zsynchronizowano');
+        }
+      }
+    } catch (_) {
+      setCloudSyncStatus('Tryb lokalny');
+    }
+  };
+
+  useEffect(() => {
+    fetchCloudStateManual();
   }, [sbUrl, sbKey]);
 
-  // Czcionka Clean Modern (Inter)
   useEffect(() => {
     const linkId = 'iron-archive-clean-font';
     if (!document.getElementById(linkId)) {
@@ -648,12 +721,14 @@ export default function App() {
       const dots = calcDOTS(p.currentWeight, total1RM);
       const bmiData = calcBMIData(p.currentWeight, p.heightCm, p.measurements.waist.current);
       const cpmData = calcCPMData(p.currentWeight, p.heightCm, p.age || 22, p.sex || 'M', p.pal || 1.55);
-      const ai = evaluatePhysiqueAI(p);
+      const macros = calcMacros(p.dietKcal, p.currentWeight, p.dietProtein);
+      const ai = evaluatePhysiqueAI(p, 0);
       return {
         ...p,
         stats: { bench1RM, squat1RM, deadlift1RM, ohp1RM, total1RM, dots },
         bmiData,
         cpmData,
+        macros,
         ai
       };
     });
@@ -678,9 +753,8 @@ export default function App() {
     return calcCPMData(w, h, a, cpmForm.sex, p);
   }, [cpmForm, currentEnriched]);
 
-  const handleSelectPhotoFile = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const runPhotoAnalysis = async (fileToScan, zoomToUse) => {
+    if (!fileToScan) return;
     setIsAnalyzingPhoto(true);
     try {
       const tempContext = {
@@ -702,16 +776,30 @@ export default function App() {
         }
       };
 
-      const evaluated = await autoEvaluateUploadedPhoto(file, tempContext);
+      const evaluated = await autoEvaluateUploadedPhoto(fileToScan, tempContext, zoomToUse);
       setBodyForm((prev) => ({
         ...prev,
         photoPreview: evaluated.dataUrl,
         autoAiResult: evaluated.aiVision
       }));
     } catch (_) {
-      alert('Nie udało się wczytać zdjęcia.');
+      alert('Nie udało się przeanalizować zdjęcia.');
     } finally {
       setIsAnalyzingPhoto(false);
+    }
+  };
+
+  const handleSelectPhotoFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setRawPhotoFile(file);
+    await runPhotoAnalysis(file, photoZoom);
+  };
+
+  const handleChangeZoom = async (newZoom) => {
+    setPhotoZoom(newZoom);
+    if (rawPhotoFile) {
+      await runPhotoAnalysis(rawPhotoFile, newZoom);
     }
   };
 
@@ -737,9 +825,8 @@ export default function App() {
     const photoUrl =
       bodyForm.photoPreview ||
       createDemoPhysiquePoster(activePlayer.name, activePlayer.goal, w, waist, chest, theme.swatch);
-    const localEval = evaluatePhysiqueAI(updatedPlayerTemp);
+    const localEval = evaluatePhysiqueAI(updatedPlayerTemp, 0);
 
-    // Pełny werdykt bez ucinania zdań!
     const finalAiVision = {
       overall: bodyForm.autoAiResult?.overall || localEval.overall,
       vScore: bodyForm.autoAiResult?.vScore || parseFloat(localEval.vScore),
@@ -751,9 +838,10 @@ export default function App() {
       source: bodyForm.autoAiResult?.source || localEval.source
     };
 
+    const todayStr = new Date().toLocaleDateString('pl-PL');
     const newPhotoEntry = {
       id: 'ph_' + Date.now(),
-      date: new Date().toLocaleDateString('pl-PL'),
+      date: todayStr,
       weight: w,
       waist,
       note: bodyForm.note || `Aktualizacja sylwetki (${activePlayer.goal} • ${activePlayer.dietKcal} kcal)`,
@@ -774,11 +862,23 @@ export default function App() {
             chest: { ...p.measurements.chest, current: chest }
           },
           photos: [newPhotoEntry, ...(p.photos || [])],
-          history: [...p.history, { date: 'Dzisiaj', weight: w, waist, bench1RM, kcal: p.dietKcal }]
+          history: [
+            ...(p.history || []),
+            {
+              date: todayStr.slice(0, 5),
+              weight: w,
+              waist,
+              bench1RM,
+              kcal: p.dietKcal,
+              aiScore: Number(finalAiVision.overall)
+            }
+          ]
         };
       })
     );
 
+    setPhotoIdxMap((prev) => ({ ...prev, [activeId]: 0 }));
+    setRawPhotoFile(null);
     setBodyForm({
       weight: '',
       waist: '',
@@ -790,7 +890,25 @@ export default function App() {
     });
   };
 
-  // Trwały zapis wyliczonego CPM oraz wybranego celu kalorycznego w profilu
+  // Usuwanie błędnie wgranego zdjęcia z historii gracza
+  const handleDeletePhoto = (playerId, photoId) => {
+    if (pinnedId && pinnedId !== playerId) return;
+    const targetPlayer = players.find((p) => p.id === playerId);
+    if (!targetPlayer || (targetPlayer.photos || []).length <= 1) {
+      alert('W profilu musi zostać przynajmniej 1 zdjęcie bazowe.');
+      return;
+    }
+
+    savePlayersPermanently((prev) =>
+      prev.map((p) => {
+        if (p.id !== playerId) return p;
+        const filteredPhotos = p.photos.filter((ph) => ph.id !== photoId);
+        return { ...p, photos: filteredPhotos };
+      })
+    );
+    setPhotoIdxMap((prev) => ({ ...prev, [playerId]: 0 }));
+  };
+
   const applyCalculatedCpmToProfile = (selectedGoalName, targetKcalValue) => {
     if (isLocked) return;
     const w = parseFloat(cpmForm.weight) || activePlayer.currentWeight;
@@ -820,7 +938,6 @@ export default function App() {
     setTimeout(() => setCpmSavedBanner(false), 3000);
   };
 
-  // Trwały zapis zmian z przycisku "Zmień Cel / Kcal" na górnym pasku
   const handleSaveDietProtocol = (e) => {
     e.preventDefault();
     if (isLocked) return;
@@ -880,7 +997,7 @@ export default function App() {
       heightCm: parseInt(newPlayer.heightCm, 10) || 180,
       goal: newPlayer.goal,
       dietKcal: kcal,
-      dietProtein: parseInt(newPlayer.dietProtein, 10) || Math.round(w * 2),
+      dietProtein: parseInt(newPlayer.dietProtein, 10) || Math.round(w * 2.1),
       startWeight: w,
       currentWeight: w,
       measurements: {
@@ -904,7 +1021,7 @@ export default function App() {
           url: createDemoPhysiquePoster(newPlayer.name.trim(), newPlayer.goal, w, waist, chest, theme.swatch)
         }
       ],
-      history: [{ date: 'Start', weight: w, waist, bench1RM: 93, kcal }]
+      history: [{ date: 'Start', weight: w, waist, bench1RM: 93, kcal, aiScore: 5.5 }]
     };
 
     savePlayersPermanently((prev) => [...prev, created]);
@@ -978,11 +1095,17 @@ export default function App() {
             <div className="p-4 text-xs space-y-2">
               <div className="font-semibold">{lightboxPhoto.note}</div>
               {lightboxPhoto.aiVision && (
-                <div className={`p-3 rounded-xl border ${theme.accentSoft}`}>
-                  <div className="font-black uppercase text-[10px] mb-1">
+                <div className={`p-3 rounded-xl border ${theme.accentSoft} space-y-1`}>
+                  <div className="font-black uppercase text-[10px]">
                     Szczegółowa Ocena Sylwetki ({lightboxPhoto.aiVision.source}):
                   </div>
-                  <p className="leading-relaxed">{lightboxPhoto.aiVision.verdict}</p>
+                  {String(lightboxPhoto.aiVision.verdict)
+                    .split(' | ')
+                    .map((part, i) => (
+                      <p key={i} className="leading-relaxed">
+                        {part}
+                      </p>
+                    ))}
                 </div>
               )}
             </div>
@@ -991,7 +1114,7 @@ export default function App() {
       )}
 
       {/* =====================================================================
-          1. GÓRNY PASEK NAWIGACJI (CZCIONKA CLEAN MODERN + CZERWONY/ŻÓŁTY)
+          1. GÓRNY PASEK NAWIGACJI
       ===================================================================== */}
       <header className={`${theme.bgCard} border-b ${theme.border} sticky top-0 z-30`}>
         <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
@@ -1004,13 +1127,21 @@ export default function App() {
                 IRON // <span className={theme.accentText}>ARCHIVE</span>
               </h1>
               <p className={`text-xs ${theme.textMuted}`}>
-                Zdjęcia Sylwetek (Ocena 1–10 + Analiza Braków) • Kalkulator CPM • Siła DOTS
+                Zdjęcia Sylwetek (Gemini Vision AI) • Makro & CPM • Historia Progresu • Siła DOTS
               </p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {/* Przełącznik Czerwony / Żółty (Zapisywany na stałe) */}
+            <button
+              onClick={fetchCloudStateManual}
+              title="Pobierz najnowsze dane znajomych z chmury Supabase"
+              className={`px-2.5 py-1.5 rounded-xl border ${theme.border} ${theme.bgSub} text-[11px] font-bold flex items-center gap-1.5 hover:border-neutral-600`}
+            >
+              <Icon name="refresh" className={`w-3.5 h-3.5 ${theme.accentText}`} />
+              <span>{cloudSyncStatus}</span>
+            </button>
+
             <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border ${theme.border} ${theme.bgSub}`}>
               <span className={`text-[11px] font-semibold ${theme.textMuted}`}>Kolor:</span>
               {Object.values(THEMES).map((t) => (
@@ -1035,7 +1166,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* Pasek wyboru aktywnego profilu + Cel, Kcal, CPM i BMI */}
+        {/* Pasek aktywnego profilu + Cel, Kcal, Makro B/T/W, CPM i BMI */}
         <div className={`border-t ${theme.border} ${theme.bgSub}`}>
           <div className="max-w-7xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -1081,7 +1212,7 @@ export default function App() {
             </div>
 
             {currentEnriched && (
-              <div className="flex flex-wrap items-center gap-2.5 text-xs">
+              <div className="flex flex-wrap items-center gap-2 text-xs">
                 <div
                   className={`px-3 py-1 rounded-lg border font-bold flex items-center gap-2 ${getGoalBadgeStyle(
                     currentEnriched.goal
@@ -1090,15 +1221,21 @@ export default function App() {
                   <Icon name="flame" className="w-3.5 h-3.5" />
                   <span>{currentEnriched.goal}:</span>
                   <strong className="text-sm">{currentEnriched.dietKcal} kcal</strong>
-                  <span className="opacity-80">(CPM: {currentEnriched.cpmData.cpm} kcal)</span>
+                  <span className="opacity-80">(CPM: {currentEnriched.cpmData.cpm})</span>
+                </div>
+
+                {/* Rozkład Makro B/T/W */}
+                <div className={`px-2.5 py-1 rounded-lg border ${theme.border} ${theme.bgCard} text-[11px] font-bold`}>
+                  <span className="text-rose-400">B: {currentEnriched.macros.protein}g</span>
+                  <span className="mx-1.5 opacity-40">|</span>
+                  <span className="text-amber-400">T: {currentEnriched.macros.fat}g</span>
+                  <span className="mx-1.5 opacity-40">|</span>
+                  <span className="text-emerald-400">W: {currentEnriched.macros.carbs}g</span>
                 </div>
 
                 <div className={`px-3 py-1 rounded-lg border ${theme.border} ${theme.bgCard} font-bold`}>
                   <span className={theme.textMuted}>BMI: </span>
-                  <strong className="text-sm">{currentEnriched.bmiData.bmi}</strong>{' '}
-                  <span className={`text-[11px] ${currentEnriched.bmiData.tone}`}>
-                    ({currentEnriched.bmiData.label})
-                  </span>
+                  <strong className="text-sm">{currentEnriched.bmiData.bmi}</strong>
                 </div>
 
                 {!isLocked && (
@@ -1113,7 +1250,6 @@ export default function App() {
             )}
           </div>
 
-          {/* ROZWIJANY PANEL SZYBKIEJ ZMIANY CELU I KALORII (ZAPISYWANY NA STAŁE) */}
           {editingDiet && !isLocked && (
             <form
               onSubmit={handleSaveDietProtocol}
@@ -1258,14 +1394,14 @@ export default function App() {
       )}
 
       {/* =====================================================================
-          2. ZAKŁADKI GŁÓWNE (WSZYSTKIE 5 ZAKŁADEK)
+          2. ZAKŁADKI GŁÓWNE
       ===================================================================== */}
       <main className="max-w-7xl mx-auto px-4 pt-6 space-y-6">
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
           {[
             { id: 'ai_physique', label: 'Zdjęcia & Sędzia AI', icon: 'camera' },
             { id: 'ranking', label: 'Tabela Ekipy & 1v1', icon: 'users' },
-            { id: 'cpm', label: 'Kalkulator CPM (Kcal)', icon: 'activity' },
+            { id: 'cpm', label: 'Kalkulator CPM & Makro', icon: 'activity' },
             { id: 'gym', label: 'Siłownia & Sztanga', icon: 'dumbbell' },
             { id: 'charts', label: 'Wykresy & DOTS', icon: 'chart' }
           ].map((t) => (
@@ -1285,7 +1421,7 @@ export default function App() {
         </div>
 
         {/* ===================================================================
-            ZAKŁADKA 1: ZDJĘCIA SYLWETEK & SĘDZIA AI (MOCNE STRONY + BRAKI)
+            ZAKŁADKA 1: ZDJĘCIA SYLWETEK, ZOOM KADRU & GALERIA PROGRESU
         =================================================================== */}
         {activeTab === 'ai_physique' && currentEnriched && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -1294,9 +1430,9 @@ export default function App() {
                 <Icon name="camera" className={`w-4 h-4 ${theme.accentText}`} />
                 Dodaj Zdjęcie ({currentEnriched.name})
               </h3>
-              <p className={`text-xs ${theme.textMuted} mb-4`}>
-                Wybierz zdjęcie – Sędzia AI automatycznie wystawi ocenę 1.0–10.0 i rozpisze braki sylwetkowe do
-                poprawy.
+              <p className={`text-xs ${theme.textMuted} mb-3`}>
+                Jeśli robisz zdjęcie z daleka w lustrze, użyj przycisku <strong>Przybliżenie (Zoom)</strong>, aby AI
+                dokładniej oceniło separację mięśni.
               </p>
 
               {isLocked ? (
@@ -1305,6 +1441,31 @@ export default function App() {
                 </div>
               ) : (
                 <form onSubmit={handleSaveBodyAndPhoto} className="space-y-3 text-xs">
+                  {/* Przełącznik Zoomu kadru przed wysyłką do Gemini */}
+                  <div className="flex items-center justify-between gap-1">
+                    <span className={`text-[11px] font-semibold ${theme.textMuted}`}>Kadr dla AI:</span>
+                    <div className="flex gap-1">
+                      {[
+                        { val: 1.0, label: '1.0x (Całe)' },
+                        { val: 1.4, label: '1.4x (Tors)' },
+                        { val: 1.8, label: '1.8x (Blisko)' }
+                      ].map((z) => (
+                        <button
+                          type="button"
+                          key={z.val}
+                          onClick={() => handleChangeZoom(z.val)}
+                          className={`px-2 py-1 rounded-lg text-[11px] font-bold border ${
+                            Math.abs(photoZoom - z.val) < 0.05
+                              ? `${theme.accentBg} ${theme.btnText} border-transparent`
+                              : `${theme.bgSub} ${theme.border} ${theme.textMuted}`
+                          }`}
+                        >
+                          {z.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <label
                     className={`block border-2 border-dashed ${theme.border} rounded-xl p-4 text-center cursor-pointer hover:border-rose-500 transition-colors ${theme.bgSub}`}
                   >
@@ -1317,14 +1478,14 @@ export default function App() {
                     {isAnalyzingPhoto ? (
                       <div className="py-8 space-y-2">
                         <Icon name="sparkles" className={`w-8 h-8 mx-auto animate-spin ${theme.accentText}`} />
-                        <div className="font-bold text-sm">Sędzia AI analizuje sylwetkę i braki...</div>
+                        <div className="font-bold text-sm">Gemini Vision AI analizuje sylwetkę...</div>
                       </div>
                     ) : bodyForm.photoPreview ? (
                       <div className="space-y-2">
                         <img
                           src={bodyForm.photoPreview}
                           alt="Podgląd"
-                          className="w-full h-52 object-cover rounded-lg mx-auto"
+                          className="w-full h-56 object-cover rounded-lg mx-auto"
                         />
                         <span className={`inline-block text-[11px] font-bold ${theme.accentText}`}>
                           Kliknij, aby wybrać inne zdjęcie
@@ -1335,7 +1496,7 @@ export default function App() {
                         <Icon name="upload" className={`w-7 h-7 mx-auto ${theme.accentText}`} />
                         <div className="font-bold text-sm">Wgraj zdjęcie sylwetki (Auto-Ocena AI)</div>
                         <div className={`text-[11px] ${theme.textMuted}`}>
-                          Ocena 1–10 i analiza braków pojawią się od razu po wybraniu pliku
+                          Rozdzielczość HD 900px • Pełna analiza mocnych stron i braków
                         </div>
                       </div>
                     )}
@@ -1351,7 +1512,7 @@ export default function App() {
                       </div>
                       <div className="grid grid-cols-3 gap-1 text-[11px] pt-1">
                         <div>V-Taper: <strong>{bodyForm.autoAiResult.vScore}</strong></div>
-                        <div>Definicja: <strong>{bodyForm.autoAiResult.defScore}</strong></div>
+                        <div>Definicja (~{bodyForm.autoAiResult.estBf}%): <strong>{bodyForm.autoAiResult.defScore}</strong></div>
                         <div>Ramiona: <strong>{bodyForm.autoAiResult.armScore}</strong></div>
                       </div>
                       <div className="text-[11px] leading-relaxed space-y-1 pt-1 border-t border-white/10">
@@ -1415,7 +1576,7 @@ export default function App() {
                     <label className={`block mb-1 ${theme.textMuted}`}>Komentarz do formy</label>
                     <input
                       type="text"
-                      placeholder="np. Rano na czczo"
+                      placeholder="np. Rano na czczo / Po treningu Push"
                       value={bodyForm.note}
                       onChange={(e) => setBodyForm({ ...bodyForm, note: e.target.value })}
                       className={`w-full px-3 py-2 rounded-lg border ${theme.border} ${theme.bgSub}`}
@@ -1432,6 +1593,7 @@ export default function App() {
               )}
             </div>
 
+            {/* KARTY ZAWODNIKÓW Z PRZEŁĄCZNIKIEM HISTORII ZDJĘĆ I USUWANIEM */}
             <div className="lg:col-span-8 space-y-4">
               <h3 className="text-sm font-black uppercase tracking-tight">
                 Tablica Sylwetek Ekipy ({enrichedPlayers.length})
@@ -1439,8 +1601,12 @@ export default function App() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {enrichedPlayers.map((p) => {
-                  const latestPhoto = p.photos?.[0];
-                  const verdictParts = String(latestPhoto?.aiVision?.verdict || p.ai.summary).split(' | ');
+                  const totalPhotos = (p.photos || []).length;
+                  const currIdx = Math.min(photoIdxMap[p.id] || 0, Math.max(0, totalPhotos - 1));
+                  const displayedPhoto = p.photos?.[currIdx] || p.photos?.[0];
+                  const photoEval = evaluatePhysiqueAI(p, currIdx);
+                  const verdictParts = String(displayedPhoto?.aiVision?.verdict || photoEval.summary).split(' | ');
+
                   return (
                     <div
                       key={p.id}
@@ -1465,32 +1631,85 @@ export default function App() {
 
                         <div className={`px-3 py-1.5 rounded-xl border text-right ${theme.accentSoft}`}>
                           <div className="text-[9px] uppercase font-bold">Ocena AI</div>
-                          <div className="text-xl font-black leading-none">{p.ai.overall}/10</div>
+                          <div className="text-xl font-black leading-none">{photoEval.overall}/10</div>
                         </div>
                       </div>
 
-                      {latestPhoto && (
-                        <div
-                          onClick={() => setLightboxPhoto({ ...latestPhoto, playerName: p.name })}
-                          className="relative group cursor-pointer bg-black h-72 overflow-hidden"
-                        >
+                      {displayedPhoto && (
+                        <div className="relative group bg-black h-72 overflow-hidden">
                           <img
-                            src={latestPhoto.url}
+                            src={displayedPhoto.url}
                             alt={p.name}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            onClick={() => setLightboxPhoto({ ...displayedPhoto, playerName: p.name })}
+                            className="w-full h-full object-cover cursor-pointer group-hover:scale-105 transition-transform duration-300"
                           />
-                          <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-lg text-[11px] font-bold text-white">
-                            Powiększ
+
+                          {/* Nawigacja po historii zdjęć (Poprzednie / Następne) */}
+                          {totalPhotos > 1 && (
+                            <div className="absolute top-3 left-3 flex items-center gap-1 bg-black/75 backdrop-blur-md px-2 py-1 rounded-lg text-[11px] font-bold text-white">
+                              <button
+                                type="button"
+                                disabled={currIdx >= totalPhotos - 1}
+                                onClick={() =>
+                                  setPhotoIdxMap((prev) => ({
+                                    ...prev,
+                                    [p.id]: Math.min(totalPhotos - 1, currIdx + 1)
+                                  }))
+                                }
+                                className="px-1.5 hover:text-rose-400 disabled:opacity-30"
+                                title="Starsze zdjęcie"
+                              >
+                                ◀
+                              </button>
+                              <span>
+                                Zdjęcie {totalPhotos - currIdx} z {totalPhotos}
+                              </span>
+                              <button
+                                type="button"
+                                disabled={currIdx <= 0}
+                                onClick={() =>
+                                  setPhotoIdxMap((prev) => ({
+                                    ...prev,
+                                    [p.id]: Math.max(0, currIdx - 1)
+                                  }))
+                                }
+                                className="px-1.5 hover:text-rose-400 disabled:opacity-30"
+                                title="Nowsze zdjęcie"
+                              >
+                                ▶
+                              </button>
+                            </div>
+                          )}
+
+                          <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                            {totalPhotos > 1 && (!pinnedId || pinnedId === p.id) && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeletePhoto(p.id, displayedPhoto.id)}
+                                title="Usuń to zdjęcie"
+                                className="bg-rose-600/90 hover:bg-rose-500 p-1.5 rounded-lg text-white"
+                              >
+                                <Icon name="trash" className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setLightboxPhoto({ ...displayedPhoto, playerName: p.name })}
+                              className="bg-black/75 backdrop-blur-md px-2.5 py-1 rounded-lg text-[11px] font-bold text-white"
+                            >
+                              Powiększ
+                            </button>
                           </div>
+
                           <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/70 to-transparent p-3 text-xs text-white">
                             <div className="flex justify-between font-bold">
-                              <span>{latestPhoto.date}</span>
+                              <span>{displayedPhoto.date}</span>
                               <span>
-                                {latestPhoto.weight} kg | Pas: {latestPhoto.waist} cm | V-Taper: {p.ai.vTaper}
+                                {displayedPhoto.weight} kg | Pas: {displayedPhoto.waist} cm | V-Taper: {photoEval.vTaper}
                               </span>
                             </div>
                             <div className="text-[11px] text-neutral-300 truncate mt-0.5">
-                              {latestPhoto.note}
+                              {displayedPhoto.note}
                             </div>
                           </div>
                         </div>
@@ -1500,25 +1719,25 @@ export default function App() {
                         <div className={`grid grid-cols-2 gap-2 p-2.5 rounded-xl border ${theme.border} ${theme.bgSub}`}>
                           <div>
                             <span className={theme.textMuted}>Proporcje V-Taper: </span>
-                            <strong>{p.ai.vScore}/10</strong>
+                            <strong>{photoEval.vScore}/10</strong>
                           </div>
                           <div>
-                            <span className={theme.textMuted}>Definicja (~{p.ai.estBf}% BF): </span>
-                            <strong>{p.ai.defScore}/10</strong>
+                            <span className={theme.textMuted}>Definicja (~{photoEval.estBf}% BF): </span>
+                            <strong>{photoEval.defScore}/10</strong>
                           </div>
                           <div>
                             <span className={theme.textMuted}>Umięśnienie: </span>
-                            <strong>{p.ai.armScore}/10</strong>
+                            <strong>{photoEval.armScore}/10</strong>
                           </div>
                           <div>
-                            <span className={theme.textMuted}>Progres formy: </span>
-                            <strong>{p.ai.progScore}/10</strong>
+                            <span className={theme.textMuted}>Progres AI: </span>
+                            <strong className={photoEval.progressTone}>{photoEval.progressLabel}</strong>
                           </div>
                         </div>
 
                         <div className="space-y-1.5">
                           <div className={`text-[10px] font-black uppercase ${theme.accentText}`}>
-                            Analiza Sylwetki i Braków ({p.ai.source}):
+                            Analiza Sylwetki i Braków ({photoEval.source}):
                           </div>
                           {verdictParts.map((part, idx) => (
                             <p key={idx} className={`${theme.textMuted} leading-relaxed`}>
@@ -1543,7 +1762,7 @@ export default function App() {
             <div className={`${theme.bgCard} border ${theme.border} rounded-2xl p-5 overflow-x-auto`}>
               <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                 <h2 className="text-base font-black uppercase tracking-tight">
-                  Klasyfikacja Ekipy (Zdjęcie, Cel & Kcal vs CPM, BMI, Siła DOTS, Ocena AI)
+                  Klasyfikacja Ekipy (Zdjęcie, Cel, Makro, BMI, Siła DOTS, Ocena AI)
                 </h2>
                 <div className="flex items-center gap-1.5 text-xs">
                   <span className={theme.textMuted}>Sortuj:</span>
@@ -1573,9 +1792,9 @@ export default function App() {
                   <tr className={`border-b ${theme.border} ${theme.textMuted} uppercase text-[11px]`}>
                     <th className="py-3 px-2">#</th>
                     <th className="py-3 px-2">Zawodnik & Zdjęcie</th>
-                    <th className="py-3 px-2">Cel & Spożywane Kcal (vs CPM)</th>
+                    <th className="py-3 px-2">Cel, Kcal & Makro (B/T/W)</th>
                     <th className="py-3 px-2">Waga & Progres</th>
-                    <th className="py-3 px-2">BMI</th>
+                    <th className="py-3 px-2">BMI & BF%</th>
                     <th className="py-3 px-2">Wymiary & V-Taper</th>
                     <th className="py-3 px-2">Trójbój & DOTS</th>
                     <th className="py-3 px-2 text-right">Sędzia AI</th>
@@ -1585,7 +1804,6 @@ export default function App() {
                   {sortedPlayers.map((p, idx) => {
                     const weightDiff = (p.currentWeight - p.startWeight).toFixed(1);
                     const latestPhoto = p.photos?.[0];
-                    const kcalDiff = p.dietKcal - p.cpmData.cpm;
                     return (
                       <tr key={p.id} className="hover:bg-white/5 transition-colors">
                         <td className="py-3 px-2 font-black text-sm">{idx + 1}.</td>
@@ -1609,17 +1827,14 @@ export default function App() {
                         </td>
                         <td className="py-3 px-2">
                           <span
-                            className={`inline-block px-2.5 py-0.5 rounded-md text-[11px] font-bold border ${getGoalBadgeStyle(
+                            className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-bold border ${getGoalBadgeStyle(
                               p.goal
                             )}`}
                           >
-                            {p.goal}
+                            {p.goal} • {p.dietKcal} kcal
                           </span>
-                          <div className="font-black text-sm mt-1">
-                            {p.dietKcal} kcal{' '}
-                            <span className={`text-[11px] font-normal ${theme.textMuted}`}>
-                              (CPM: {p.cpmData.cpm} kcal • {kcalDiff > 0 ? `+${kcalDiff}` : kcalDiff})
-                            </span>
+                          <div className={`text-[11px] mt-1 ${theme.textMuted}`}>
+                            B: {p.macros.protein}g | T: {p.macros.fat}g | W: {p.macros.carbs}g
                           </div>
                         </td>
                         <td className="py-3 px-2">
@@ -1631,7 +1846,7 @@ export default function App() {
                         <td className="py-3 px-2">
                           <div className="font-black text-sm">BMI {p.bmiData.bmi}</div>
                           <div className={`text-[11px] font-semibold ${p.bmiData.tone}`}>
-                            {p.bmiData.label}
+                            ~{p.ai.estBf}% BF ({p.bmiData.label})
                           </div>
                         </td>
                         <td className="py-3 px-2">
@@ -1735,17 +1950,12 @@ export default function App() {
 
                     {[
                       {
-                        label: 'Cel, Spożywane Kcal i CPM',
-                        valA: `${pA.goal} • ${pA.dietKcal} kcal (CPM: ${pA.cpmData.cpm})`,
-                        valB: `${pB.goal} • ${pB.dietKcal} kcal (CPM: ${pB.cpmData.cpm})`
+                        label: 'Cel, Spożywane Kcal i Makro',
+                        valA: `${pA.goal} • ${pA.dietKcal} kcal (B:${pA.macros.protein} T:${pA.macros.fat} W:${pA.macros.carbs})`,
+                        valB: `${pB.goal} • ${pB.dietKcal} kcal (B:${pB.macros.protein} T:${pB.macros.fat} W:${pB.macros.carbs})`
                       },
                       {
-                        label: 'Wskaźnik BMI',
-                        valA: `BMI ${pA.bmiData.bmi} (${pA.bmiData.label})`,
-                        valB: `BMI ${pB.bmiData.bmi} (${pB.bmiData.label})`
-                      },
-                      {
-                        label: 'Ocena Sędziego AI (1-10)',
+                        label: 'Ocena Sędziego AI & BF%',
                         valA: `${pA.ai.overall} / 10 (BF ~${pA.ai.estBf}%)`,
                         valB: `${pB.ai.overall} / 10 (BF ~${pB.ai.estBf}%)`
                       },
@@ -1779,14 +1989,14 @@ export default function App() {
         )}
 
         {/* ===================================================================
-            ZAKŁADKA 3: KALKULATOR CPM (ZAPISYWANY NA STAŁE)
+            ZAKŁADKA 3: KALKULATOR CPM & MAKROSKŁADNIKÓW
         =================================================================== */}
         {activeTab === 'cpm' && currentEnriched && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className={`lg:col-span-5 ${theme.bgCard} border ${theme.border} rounded-2xl p-5 space-y-4`}>
               <h3 className="text-sm font-black uppercase tracking-tight flex items-center gap-2">
                 <Icon name="activity" className={`w-4 h-4 ${theme.accentText}`} />
-                Kalkulator PPM & CPM ({currentEnriched.name})
+                Kalkulator PPM, CPM & Makro ({currentEnriched.name})
               </h3>
               <p className={`text-xs ${theme.textMuted}`}>
                 Wzór Mifflina-St Jeora: <code>PPM = 10×masa + 6.25×wzrost - 5×wiek + 5</code>, a{' '}
@@ -1856,7 +2066,7 @@ export default function App() {
 
             <div className={`lg:col-span-7 ${theme.bgCard} border ${theme.border} rounded-2xl p-5 space-y-5`}>
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-black uppercase">Twoje Wyliczone Zapotrzebowanie (CPM)</h3>
+                <h3 className="text-sm font-black uppercase">Wyliczone Zapotrzebowanie (CPM) i Rozkład Makro</h3>
                 {cpmSavedBanner && (
                   <span className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 text-xs font-bold">
                     ✓ Zapisano na stałe w profilu!
@@ -1881,24 +2091,30 @@ export default function App() {
                   { goal: 'Rekompozycja', kcal: liveCpmResult.recomp, diff: 'Równo z CPM (Zero)' },
                   { goal: 'Czysta Masa', kcal: liveCpmResult.leanBulk, diff: '+300 kcal nad CPM' },
                   { goal: 'Masa Siłowa', kcal: liveCpmResult.powerBulk, diff: '+500 kcal nad CPM' }
-                ].map((opt) => (
-                  <div key={opt.goal} className={`p-4 rounded-xl border ${theme.border} ${theme.bgSub} space-y-2`}>
-                    <div className="flex justify-between">
-                      <span className={`px-2 py-0.5 rounded font-bold border ${getGoalBadgeStyle(opt.goal)}`}>
-                        {opt.goal}
-                      </span>
-                      <span className={theme.textMuted}>{opt.diff}</span>
+                ].map((opt) => {
+                  const m = calcMacros(opt.kcal, parseFloat(cpmForm.weight) || currentEnriched.currentWeight);
+                  return (
+                    <div key={opt.goal} className={`p-4 rounded-xl border ${theme.border} ${theme.bgSub} space-y-2`}>
+                      <div className="flex justify-between">
+                        <span className={`px-2 py-0.5 rounded font-bold border ${getGoalBadgeStyle(opt.goal)}`}>
+                          {opt.goal}
+                        </span>
+                        <span className={theme.textMuted}>{opt.diff}</span>
+                      </div>
+                      <div className="text-xl font-black">{opt.kcal} kcal / dzień</div>
+                      <div className="text-[11px] font-semibold text-neutral-300">
+                        Białko: {m.protein}g • Tłuszcz: {m.fat}g • Węgle: {m.carbs}g
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => applyCalculatedCpmToProfile(opt.goal, opt.kcal)}
+                        className={`w-full py-2 rounded-lg font-bold border ${theme.border} hover:border-rose-500 transition-colors`}
+                      >
+                        Zapisz na stałe w profilu ({opt.kcal} kcal)
+                      </button>
                     </div>
-                    <div className="text-xl font-black">{opt.kcal} kcal / dzień</div>
-                    <button
-                      type="button"
-                      onClick={() => applyCalculatedCpmToProfile(opt.goal, opt.kcal)}
-                      className={`w-full py-2 rounded-lg font-bold border ${theme.border} hover:border-rose-500 transition-colors`}
-                    >
-                      Zapisz na stałe w profilu ({opt.kcal} kcal)
-                    </button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -2021,7 +2237,7 @@ export default function App() {
         )}
 
         {/* ===================================================================
-            ZAKŁADKA 5: WYKRESY OSI CZASU & DOTS
+            ZAKŁADKA 5: WYKRESY OSI CZASU (WAGA, PAS, 1RM, KCAL, OCENA AI)
         =================================================================== */}
         {activeTab === 'charts' && currentEnriched && (
           <div className={`${theme.bgCard} border ${theme.border} rounded-2xl p-5 space-y-5`}>
@@ -2029,10 +2245,11 @@ export default function App() {
               <h3 className="text-sm font-black uppercase">
                 Wykres Progresu – {currentEnriched.name} (DOTS: {currentEnriched.stats.dots})
               </h3>
-              <div className="flex items-center gap-1.5 text-xs">
+              <div className="flex flex-wrap items-center gap-1.5 text-xs">
                 {[
                   { id: 'weight', label: 'Waga (kg)' },
                   { id: 'waist', label: 'Pas (cm)' },
+                  { id: 'aiScore', label: 'Ocena AI (1-10)' },
                   { id: 'bench1RM', label: 'Ławka 1RM (kg)' },
                   { id: 'kcal', label: 'Kalorie (kcal)' }
                 ].map((m) => (
@@ -2053,18 +2270,19 @@ export default function App() {
 
             {(() => {
               const hist = currentEnriched.history || [];
-              const vals = hist.map((h) => h[chartMetric] || 0);
-              const minVal = Math.min(...vals) - 2;
-              const maxVal = Math.max(...vals) + 2;
+              const vals = hist.map((h) => Number(h[chartMetric]) || currentEnriched.ai.overall || 0);
+              const minVal = Math.min(...vals) - 1;
+              const maxVal = Math.max(...vals) + 1;
               const width = 700;
               const height = 220;
               const points = hist
                 .map((h, i) => {
+                  const val = Number(h[chartMetric]) || currentEnriched.ai.overall || 0;
                   const x = 50 + (i / Math.max(1, hist.length - 1)) * (width - 100);
                   const y =
                     height -
                     35 -
-                    (((h[chartMetric] || 0) - minVal) / Math.max(1, maxVal - minVal)) * (height - 70);
+                    ((val - minVal) / Math.max(1, maxVal - minVal)) * (height - 70);
                   return `${x},${y}`;
                 })
                 .join(' ');
@@ -2074,16 +2292,17 @@ export default function App() {
                   <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-56">
                     <polyline fill="none" stroke={theme.swatch} strokeWidth="3.5" points={points} />
                     {hist.map((h, i) => {
+                      const val = Number(h[chartMetric]) || currentEnriched.ai.overall || 0;
                       const x = 50 + (i / Math.max(1, hist.length - 1)) * (width - 100);
                       const y =
                         height -
                         35 -
-                        (((h[chartMetric] || 0) - minVal) / Math.max(1, maxVal - minVal)) * (height - 70);
+                        ((val - minVal) / Math.max(1, maxVal - minVal)) * (height - 70);
                       return (
                         <g key={i}>
                           <circle cx={x} cy={y} r="5" fill={theme.swatch} />
                           <text x={x} y={y - 12} textAnchor="middle" fill="currentColor" className="text-[11px] font-bold">
-                            {h[chartMetric]}
+                            {val}
                           </text>
                           <text x={x} y={height - 10} textAnchor="middle" fill="#a3a3a3" className="text-[10px]">
                             {h.date}
