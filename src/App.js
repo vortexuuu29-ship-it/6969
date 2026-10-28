@@ -73,7 +73,11 @@ const ICONS = {
   copy: <><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></>,
   alert: <><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></>,
   cloud: <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />,
-  settings: <><line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" /><line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" /><line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" /><line x1="1" y1="14" x2="7" y2="14" /><line x1="9" y1="8" x2="15" y2="8" /><line x1="17" y1="16" x2="23" y2="16" /></>
+  settings: <><line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" /><line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" /><line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" /><line x1="1" y1="14" x2="7" y2="14" /><line x1="9" y1="8" x2="15" y2="8" /><line x1="17" y1="16" x2="23" y2="16" /></>,
+  trophy: <><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" /><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" /><path d="M4 22h16" /><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" /><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" /><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" /></>,
+  zap: <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />,
+  scale: <><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" /><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" /><path d="M7 21h10" /><path d="M12 3v18" /><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2" /></>,
+  columns: <><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M12 3v18" /></>
 };
 
 const Icon = ({ name, className = 'w-4 h-4' }) => (
@@ -96,15 +100,17 @@ const FONT = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif
 const STYLES = `
 .ia-root{min-height:100vh;background:#09090b;color:#f4f4f5;position:relative;overflow-x:hidden;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 .ia-aurora{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
-.ia-blob{position:absolute;border-radius:9999px;filter:blur(100px);animation:ia-float 22s ease-in-out infinite;transition:background .6s ease}
-.ia-blob.a{width:560px;height:560px;top:-220px;left:-140px;background:rgb(var(--ac)/.20)}
-.ia-blob.b{width:480px;height:480px;top:35%;right:-180px;background:rgb(var(--ac2)/.14);animation-delay:-7s}
-.ia-blob.c{width:520px;height:520px;bottom:-260px;left:25%;background:rgb(var(--ac)/.09);animation-delay:-12s}
+.ia-blob{position:absolute;border-radius:9999px;will-change:transform;animation:ia-float 22s ease-in-out infinite}
+.ia-blob.a{width:560px;height:560px;top:-220px;left:-140px;background:radial-gradient(closest-side,rgb(var(--ac)/.26),rgb(var(--ac)/.10) 55%,transparent)}
+.ia-blob.b{width:480px;height:480px;top:35%;right:-180px;background:radial-gradient(closest-side,rgb(var(--ac2)/.20),rgb(var(--ac2)/.07) 55%,transparent);animation-delay:-7s}
+.ia-blob.c{width:520px;height:520px;bottom:-260px;left:25%;background:radial-gradient(closest-side,rgb(var(--ac)/.14),rgb(var(--ac)/.05) 55%,transparent);animation-delay:-12s}
 .ia-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px);background-size:44px 44px;-webkit-mask-image:radial-gradient(ellipse at 50% 0%,#000 0%,transparent 70%);mask-image:radial-gradient(ellipse at 50% 0%,#000 0%,transparent 70%)}
 .ia-z{position:relative;z-index:1}
 
 .ia-glass{background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.025));border:1px solid rgba(255,255,255,.08);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 12px 32px -14px rgba(0,0,0,.7)}
-.ia-card{border-radius:1.25rem;transition:transform .3s cubic-bezier(.2,.8,.2,1),border-color .3s,box-shadow .3s}
+.ia-card{position:relative;border-radius:1.25rem;transition:transform .3s cubic-bezier(.2,.8,.2,1),border-color .3s,box-shadow .3s}
+.ia-card::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .35s;background:radial-gradient(340px circle at var(--cx,50%) var(--cy,50%),rgb(var(--ac)/.11),transparent 60%)}
+.ia-card:hover::before{opacity:1}
 .ia-lift:hover{transform:translateY(-3px);border-color:rgb(var(--ac)/.35);box-shadow:0 20px 44px -18px rgb(var(--ac)/.4)}
 .ia-sub{background:rgba(0,0,0,.32);border:1px solid rgba(255,255,255,.07);transition:border-color .2s,background .2s,transform .2s}
 .ia-muted{color:rgba(244,244,245,.56)}
@@ -179,7 +185,49 @@ select.ia-input option{background:#18181b;color:#fff}
 .ia-zoom{transition:transform .6s cubic-bezier(.2,.8,.2,1)}
 .group:hover .ia-zoom{transform:scale(1.06)}
 .ia-pre{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.68rem;line-height:1.5;white-space:pre;overflow:auto;max-height:190px}
-@media (prefers-reduced-motion:reduce){.ia-root *{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}}
+
+/* ---------- kinowa warstwa ---------- */
+.ia-spot{position:absolute;inset:0;background:radial-gradient(560px circle at var(--mx,50%) var(--my,18%),rgb(var(--ac)/.11),transparent 62%)}
+.ia-grain{position:fixed;inset:0;pointer-events:none;z-index:2;opacity:.06;animation:ia-grain .9s steps(6) infinite;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+.ia-vig{position:fixed;inset:0;pointer-events:none;z-index:3;background:radial-gradient(ellipse at 50% 38%,transparent 52%,rgba(0,0,0,.5) 100%)}
+@keyframes ia-grain{0%{background-position:0 0}20%{background-position:-54px 36px}40%{background-position:36px -54px}60%{background-position:-36px -18px}80%{background-position:54px 54px}100%{background-position:0 0}}
+@keyframes ia-cine{from{opacity:0;transform:translateY(14px) scale(.985);filter:blur(10px)}to{opacity:1;transform:none;filter:none}}
+@keyframes ia-sheen{0%,55%{transform:translateX(-130%)}100%{transform:translateX(130%)}}
+@keyframes ia-glow{0%,100%{box-shadow:0 0 26px -6px rgb(var(--ac)/.5)}50%{box-shadow:0 0 42px -4px rgb(var(--ac)/.85)}}
+@keyframes ia-rise{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes ia-crown{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-5px) rotate(6deg)}}
+@keyframes ia-splash-out{to{opacity:0;visibility:hidden;transform:scale(1.06)}}
+@keyframes ia-lbx-t{to{transform:translateY(-100%)}}
+@keyframes ia-lbx-b{to{transform:translateY(100%)}}
+@keyframes ia-track{from{letter-spacing:.9em;opacity:0;filter:blur(8px)}to{letter-spacing:.14em;opacity:1;filter:none}}
+@keyframes ia-bar{from{width:0}to{width:min(320px,70vw)}}
+.ia-cine{animation:ia-cine .75s cubic-bezier(.2,.8,.2,1) both}
+.ia-big{letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.ia-hero{position:relative;overflow:hidden;border-radius:1.75rem;background:linear-gradient(135deg,rgb(var(--ac)/.17),rgba(255,255,255,.035) 46%,rgb(var(--ac2)/.11));border:1px solid rgb(var(--ac)/.3);box-shadow:0 30px 70px -34px rgb(var(--ac)/.55)}
+.ia-hero::after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,transparent 38%,rgba(255,255,255,.085) 50%,transparent 62%);animation:ia-sheen 7s ease-in-out 1.2s infinite}
+.ia-av-ring{display:inline-flex;padding:3px;border-radius:9999px;background:conic-gradient(from 140deg,rgb(var(--ac)),rgb(var(--ac2)),rgb(var(--ac)/.25),rgb(var(--ac)));animation:ia-glow 3.2s ease-in-out infinite}
+.ia-av-ring>*{border:3px solid #09090b}
+.ia-pod-col{transform-origin:bottom;animation:ia-rise .9s cubic-bezier(.2,.9,.25,1) both}
+.ia-crown{display:inline-block;animation:ia-crown 2.6s ease-in-out infinite}
+.ia-tcard{position:relative;border-radius:1.25rem;padding:1.5px;background:linear-gradient(160deg,rgb(var(--ac)/.95),rgba(255,255,255,.08) 42%,rgb(var(--ac2)/.8));transition:transform .22s ease-out,box-shadow .3s;will-change:transform}
+.ia-tcard:hover{box-shadow:0 26px 50px -24px rgb(var(--ac)/.7)}
+.ia-tcard.me{animation:ia-glow 3.2s ease-in-out infinite}
+.ia-tcard-in{position:relative;overflow:hidden;border-radius:calc(1.25rem - 1.5px);background:linear-gradient(170deg,#1b1b20,#0b0b0d 72%)}
+.ia-tcard-foil{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .3s;mix-blend-mode:overlay;background:radial-gradient(circle at var(--fx,50%) var(--fy,0%),rgba(255,255,255,.34),transparent 48%)}
+.ia-tcard:hover .ia-tcard-foil{opacity:1}
+.ia-ach{transition:transform .25s,border-color .25s}
+.ia-ach.off{filter:grayscale(1);opacity:.42}
+.ia-ach:not(.off):hover{transform:translateY(-2px);border-color:rgb(var(--ac)/.5)}
+.ia-splash{position:fixed;inset:0;z-index:100;background:#050506;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;pointer-events:none;animation:ia-splash-out .8s cubic-bezier(.6,0,.2,1) 1.9s forwards;overflow:hidden}
+.ia-splash::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgb(var(--ac)/.22),transparent 55%)}
+.ia-lbx{position:absolute;left:0;right:0;height:13vh;background:#000;z-index:2}
+.ia-lbx.t{top:0;animation:ia-lbx-t .9s cubic-bezier(.7,0,.2,1) 1.7s forwards}
+.ia-lbx.b{bottom:0;animation:ia-lbx-b .9s cubic-bezier(.7,0,.2,1) 1.7s forwards}
+.ia-splash-title{position:relative;font-size:clamp(2rem,9vw,4.2rem);font-weight:900;text-transform:uppercase;animation:ia-track 1.5s cubic-bezier(.2,.8,.2,1) .15s both;text-align:center;padding:0 1rem}
+.ia-splash-kicker{position:relative;font-size:.7rem;font-weight:800;letter-spacing:.4em;color:rgba(244,244,245,.55);animation:ia-fade 1s ease .1s both}
+.ia-splash-bar{position:relative;height:2px;background:linear-gradient(90deg,transparent,rgb(var(--ac)),transparent);animation:ia-bar 1.3s cubic-bezier(.2,.8,.2,1) .35s both}
+.ia-splash-sub{position:relative;font-size:.78rem;font-weight:700;color:rgba(244,244,245,.5);animation:ia-fade 1s ease .9s both}
+@media (prefers-reduced-motion:reduce){.ia-root *{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}.ia-splash,.ia-grain{display:none !important}}
 `;
 
 /* --------------------------- Małe pomocnicze komponenty --------------------------- */
@@ -228,8 +276,11 @@ const hueOf = (s) => {
   return h;
 };
 
-const Avatar = ({ name, size = 28 }) => {
+const Avatar = ({ name, src, size = 28 }) => {
   const h = hueOf(name);
+  if (src) {
+    return <img src={src} alt="" draggable={false} className="inline-block rounded-full object-cover shrink-0 bg-black" style={{ width: size, height: size }} />;
+  }
   return (
     <span className="inline-flex items-center justify-center rounded-full font-black shrink-0 text-white" style={{ width: size, height: size, fontSize: size * 0.44, background: `linear-gradient(135deg,hsl(${h} 75% 55%),hsl(${(h + 45) % 360} 75% 40%))` }}>
       {String(name || '?').trim().charAt(0).toUpperCase()}
@@ -744,6 +795,456 @@ const calcPlatesPerSide = (targetWeight) => {
   return result;
 };
 
+/* ================================ RYWALIZACJA ================================ */
+const DAY_MS = 86400000;
+const clampN = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const dayKey = (ts) => {
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+};
+const startOfWeek = (ts = Date.now()) => {
+  const d = new Date(ts);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d.getTime();
+};
+const weekIndex = (ts = Date.now()) => Math.round((startOfWeek(ts) - startOfWeek(new Date(2026, 0, 5).getTime())) / (7 * DAY_MS));
+const timeAgo = (ts, now = Date.now()) => {
+  const m = Math.max(0, Math.round((now - ts) / 60000));
+  if (m < 1) return 'przed chwilą';
+  if (m < 60) return `${m} min temu`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h} godz. temu`;
+  const d = Math.round(h / 24);
+  return d === 1 ? 'wczoraj' : `${d} dni temu`;
+};
+const shortDate = (ts) => new Date(ts).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' });
+const fmtSigned = (v, digits = 1, unit = '') => {
+  const n = Number(v) || 0;
+  const s = Math.abs(n).toFixed(digits).replace('.', ',');
+  return `${n > 0 ? '+' : n < 0 ? '−' : ''}${s}${unit}`;
+};
+
+const LIFT_KEYS = ['bench', 'squat', 'deadlift', 'ohp'];
+const LIFT_NAMES = { bench: 'Wyciskanie leżąc', squat: 'Przysiad', deadlift: 'Martwy ciąg', ohp: 'OHP' };
+const rmOf = (l) => calc1RM(l?.weight, l?.reps);
+// najlepszy wynik 1RM z ostatniej serii oraz z całej historii rekordów
+const bestRM = (p, k) => Math.max(rmOf(p.lifts?.[k]), 0, ...(p.prs || []).filter((r) => r.lift === k).map((r) => r.rm || 0));
+const baseRM = (p, k) => {
+  const list = (p.prs || []).filter((r) => r.lift === k).sort((a, b) => (a.ts || 0) - (b.ts || 0));
+  return list.length ? list[0].rm || 0 : 0;
+};
+const goalDir = (goal) => {
+  const g = String(goal || '').toLowerCase();
+  if (g.includes('redukcja')) return -1;
+  if (g.includes('masa')) return 1;
+  return 0;
+};
+
+// dni, w których ktoś coś zapisał (ważenie, zdjęcie, seria)
+const activityDays = (p) => {
+  const set = new Set();
+  (p.weighIns || []).forEach((w) => w.ts && set.add(dayKey(w.ts)));
+  (p.photos || []).forEach((ph) => ph.ts && set.add(dayKey(ph.ts)));
+  (p.prs || []).forEach((r) => r.ts && !r.base && set.add(dayKey(r.ts)));
+  return set;
+};
+const calcStreak = (p, now = Date.now()) => {
+  const days = activityDays(p);
+  const d = new Date(now);
+  d.setHours(12, 0, 0, 0);
+  if (!days.has(dayKey(d.getTime()))) d.setDate(d.getDate() - 1); // dziś jeszcze można dopisać – to nie przerwa
+  let n = 0;
+  while (days.has(dayKey(d.getTime()))) {
+    n += 1;
+    d.setDate(d.getDate() - 1);
+  }
+  return n;
+};
+
+// punkty ligi tygodniowej – nagradzamy regularność i rekordy, a nie samo „schudnięcie jak najwięcej”
+const weekStats = (p, since = startOfWeek(), now = Date.now()) => {
+  const weigh = (p.weighIns || []).filter((w) => w.ts >= since);
+  const photos = (p.photos || []).filter((ph) => ph.ts && ph.ts >= since);
+  const sets = (p.prs || []).filter((r) => !r.base && r.ts >= since);
+  const weighDays = new Set(weigh.map((w) => dayKey(w.ts))).size;
+  const prCount = sets.filter((r) => r.pr).length;
+  const all = new Set([...weigh.map((w) => dayKey(w.ts)), ...photos.map((ph) => dayKey(ph.ts)), ...sets.map((r) => dayKey(r.ts))]);
+  const bestPhotoAi = photos.reduce((m, ph) => Math.max(m, Number(ph.aiVision?.overall) || 0), 0);
+  const pts = Math.min(weighDays, 7) * 5 + Math.min(photos.length, 2) * 20 + Math.min(prCount, 4) * 30 + Math.min(sets.length, 12) * 4 + all.size * 3;
+  return { weighDays, photos: photos.length, sets: sets.length, prCount, activeDays: all.size, bestPhotoAi, streak: calcStreak(p, now), pts };
+};
+
+const CHALLENGES = [
+  { id: 'weigh', icon: '⚖️', title: 'Poranne ważenie', desc: 'Kto zapisze wagę w największej liczbie dni tygodnia.', unit: 'dni', goal: 5, metric: (w) => w.weighDays },
+  { id: 'pr', icon: '🏆', title: 'Łowca rekordów', desc: 'Kto pobije najwięcej rekordów życiowych.', unit: 'PR', goal: 3, metric: (w) => w.prCount },
+  { id: 'sets', icon: '🏋️', title: 'Żelazny tydzień', desc: 'Kto zapisze najwięcej serii na siłowni.', unit: 'serii', goal: 8, metric: (w) => w.sets },
+  { id: 'photo', icon: '📸', title: 'Kadr tygodnia', desc: 'Dodaj zdjęcie – najwyższa ocena Sędziego AI zgarnia koronę.', unit: 'pkt AI', goal: 8, metric: (w) => w.bestPhotoAi },
+  { id: 'streak', icon: '🔥', title: 'Seria nie do złamania', desc: 'Kto ma najdłuższą serię aktywnych dni z rzędu.', unit: 'dni', goal: 7, metric: (w) => w.streak },
+  { id: 'active', icon: '⚡', title: 'Aktywny tydzień', desc: 'Kto zapisze coś w największej liczbie różnych dni.', unit: 'dni', goal: 6, metric: (w) => w.activeDays }
+];
+
+// postęp względem własnego startu – dzięki temu wygrywa ten, kto się poprawia, a nie ten, kto zaczynał z wyższego poziomu
+const calcProgress = (p) => {
+  const start = p.startWeight || p.currentWeight || 0;
+  const dPct = start ? ((p.currentWeight - start) / start) * 100 : 0;
+  const dir = goalDir(p.goal);
+  const m = p.measurements || {};
+  const waistDrop = (m.waist?.start || 0) - (m.waist?.current || 0);
+  const armGain = (m.biceps?.current || 0) - (m.biceps?.start || 0) + ((m.chest?.current || 0) - (m.chest?.start || 0));
+  let baseSum = 0;
+  let curSum = 0;
+  ['bench', 'squat', 'deadlift'].forEach((k) => {
+    const b = baseRM(p, k);
+    if (b) {
+      baseSum += b;
+      curSum += bestRM(p, k);
+    }
+  });
+  const strengthPct = baseSum ? ((curSum - baseSum) / baseSum) * 100 : 0;
+  const photos = p.photos || [];
+  const aiOf = (ph) => Number(ph?.aiVision?.overall) || 0;
+  const aiDelta = photos.length > 1 && aiOf(photos[0]) && aiOf(photos[photos.length - 1]) ? aiOf(photos[0]) - aiOf(photos[photos.length - 1]) : 0;
+  const minor = (p.age || 22) < 18; // u osób niepełnoletnich nie punktujemy samego chudnięcia
+  let body;
+  if (dir < 0) body = (minor ? 0 : clampN(-dPct, -5, 10) * 4) + clampN(waistDrop, -8, 12) * 3;
+  else if (dir > 0) body = clampN(dPct, -5, 8) * 4 + clampN(armGain, -5, 10) * 2.5 - Math.max(0, -waistDrop - 3) * 1.5;
+  else body = clampN(2 - Math.abs(dPct), -5, 2) * 2 + clampN(waistDrop, -8, 12) * 2 + clampN(armGain, -5, 10);
+  const pts = Math.round((body + clampN(strengthPct, -20, 80) * 0.5 + clampN(aiDelta, -3, 4) * 6) * 10) / 10;
+  return { dPct, waistDrop, armGain, strengthPct, aiDelta, pts };
+};
+
+const ACHIEVEMENTS = [
+  { id: 'first_set', icon: '🩸', title: 'Pierwsza krew', desc: 'Zapisz pierwszą serię na siłowni', test: (c) => c.setCount >= 1 },
+  { id: 'pr1', icon: '🏆', title: 'Rekordzista', desc: 'Pobij własny rekord życiowy', test: (c) => c.prCount >= 1 },
+  { id: 'pr5', icon: '💥', title: 'Maszyna do rekordów', desc: '5 pobitych rekordów', test: (c) => c.prCount >= 5 },
+  { id: 'bench100', icon: '🛡️', title: 'Klub 100', desc: 'Wyciskanie leżąc 1RM ≥ 100 kg', test: (c) => c.rm.bench >= 100 },
+  { id: 'squat140', icon: '🦵', title: 'Klub 140', desc: 'Przysiad 1RM ≥ 140 kg', test: (c) => c.rm.squat >= 140 },
+  { id: 'dead180', icon: '🏗️', title: 'Klub 180', desc: 'Martwy ciąg 1RM ≥ 180 kg', test: (c) => c.rm.deadlift >= 180 },
+  { id: 'total400', icon: '👑', title: 'Klub 400', desc: 'Suma trójboju ≥ 400 kg', test: (c) => c.total >= 400 },
+  { id: 'weigh5', icon: '⚖️', title: 'Waga nie kłamie', desc: '5 zapisanych ważeń', test: (c) => c.weighCount >= 5 },
+  { id: 'streak3', icon: '🔥', title: 'Trzy z rzędu', desc: 'Seria 3 aktywnych dni', test: (c) => c.streak >= 3 },
+  { id: 'streak7', icon: '🌋', title: 'Tydzień ognia', desc: 'Seria 7 aktywnych dni', test: (c) => c.streak >= 7 },
+  { id: 'streak30', icon: '☄️', title: 'Miesiąc żelaza', desc: 'Seria 30 aktywnych dni', test: (c) => c.streak >= 30 },
+  { id: 'photo3', icon: '📸', title: 'Kronikarz', desc: '3 zdjęcia sylwetki w archiwum', test: (c) => c.photos >= 3 },
+  { id: 'ai8', icon: '✨', title: 'Oko Sędziego', desc: 'Ocena AI na poziomie 8,0 lub wyżej', test: (c) => c.ai >= 8 },
+  { id: 'fan', icon: '🦍', title: 'Ulubieniec ekipy', desc: '10 reakcji pod Twoimi zdjęciami', test: (c) => c.reactions >= 10 },
+  { id: 'goal2', icon: '🎯', title: 'Zgodnie z planem', desc: 'Waga o 2 kg bliżej celu niż na starcie', test: (c) => c.goodKg >= 2 },
+  { id: 'avatar', icon: '🖼️', title: 'Twarz ekipy', desc: 'Ustaw własne zdjęcie profilowe', test: (c) => c.hasAvatar }
+];
+
+const achievementsOf = (p, now = Date.now()) => {
+  const rm = {};
+  LIFT_KEYS.forEach((k) => { rm[k] = bestRM(p, k); });
+  const prs = (p.prs || []).filter((r) => !r.base);
+  const dir = goalDir(p.goal);
+  const c = {
+    setCount: prs.length,
+    prCount: prs.filter((r) => r.pr).length,
+    rm,
+    total: rm.bench + rm.squat + rm.deadlift,
+    weighCount: (p.weighIns || []).length,
+    streak: calcStreak(p, now),
+    photos: (p.photos || []).length,
+    ai: evaluatePhysiqueAI(p, 0).overall,
+    reactions: (p.photos || []).reduce((s, ph) => s + Object.values(ph.reactions || {}).reduce((a, b) => a + (Number(b) || 0), 0), 0),
+    goodKg: dir === 0 ? 0 : dir * ((p.currentWeight || 0) - (p.startWeight || p.currentWeight || 0)),
+    hasAvatar: Boolean(p.avatar)
+  };
+  return ACHIEVEMENTS.map((a) => ({ id: a.id, icon: a.icon, title: a.title, desc: a.desc, got: Boolean(a.test(c)) }));
+};
+
+const calcOVR = ({ ai, dots, streak, achCount, progPts }) =>
+  Math.round(Math.min(99, 38 + ai * 3.4 + (Math.min(dots, 380) / 380) * 18 + (Math.min(streak, 30) / 30) * 5 + (Math.min(achCount, 16) / 16) * 4 + (clampN(progPts, 0, 60) / 60) * 4));
+
+const buildFeed = (players, limit = 14) => {
+  const ev = [];
+  players.forEach((p) => {
+    (p.photos || []).forEach((ph) => ph.ts && ev.push({ ts: ph.ts, kind: 'photo', who: p, text: `nowe zdjęcie sylwetki • ${ph.weight} kg${ph.aiVision?.overall ? ` • AI ${Number(ph.aiVision.overall).toFixed(1)}` : ''}` }));
+    (p.prs || []).forEach((r) => !r.base && r.ts && ev.push({ ts: r.ts, kind: r.pr ? 'pr' : 'set', who: p, text: `${r.pr ? 'NOWY REKORD' : 'seria'}: ${LIFT_NAMES[r.lift] || r.lift} ${r.weight} kg × ${r.reps} (1RM ${r.rm} kg)` }));
+    (p.weighIns || []).forEach((w) => w.ts && ev.push({ ts: w.ts, kind: 'weigh', who: p, text: `ważenie: ${String(w.w).replace('.', ',')} kg` }));
+  });
+  return ev.sort((a, b) => b.ts - a.ts).slice(0, limit);
+};
+
+/* ------------------------- Komponenty widowiskowe ------------------------- */
+const Splash = () => (
+  <div className="ia-splash" aria-hidden="true">
+    <div className="ia-lbx t" />
+    <div className="ia-lbx b" />
+    <div className="ia-splash-kicker">CREW ARENA • 2026</div>
+    <div className="ia-splash-title">IRON <span className="ia-grad-text">ARCHIVE</span></div>
+    <div className="ia-splash-bar" />
+    <div className="ia-splash-sub">Wygrywa ten, kto się poprawia.</div>
+  </div>
+);
+
+const Confetti = ({ burst, colorKey }) => {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!burst) return undefined;
+    if (typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
+    const cv = ref.current;
+    if (!cv) return undefined;
+    const ctx = cv.getContext('2d');
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const w = (cv.width = Math.round(window.innerWidth * dpr));
+    const h = (cv.height = Math.round(window.innerHeight * dpr));
+    const colors = colorKey.split(',');
+    const parts = Array.from({ length: 170 }, (_, i) => {
+      const side = i % 3; // 0 = lewa armata, 1 = prawa, 2 = środek
+      const x = side === 0 ? 0 : side === 1 ? w : w / 2;
+      const dir = side === 0 ? 1 : side === 1 ? -1 : (Math.random() - 0.5) * 0.6;
+      return {
+        x,
+        y: side === 2 ? h * 0.3 : h * 0.85,
+        vx: (side === 2 ? dir * 9 : dir * (6 + Math.random() * 11)) * dpr,
+        vy: (-(side === 2 ? 4 + Math.random() * 9 : 10 + Math.random() * 14)) * dpr,
+        s: (5 + Math.random() * 7) * dpr,
+        r: Math.random() * 6,
+        vr: (Math.random() - 0.5) * 0.4,
+        c: colors[i % colors.length]
+      };
+    });
+    let frame = 0;
+    let raf;
+    const step = () => {
+      frame += 1;
+      ctx.clearRect(0, 0, w, h);
+      let alive = 0;
+      parts.forEach((p) => {
+        p.vy += 0.34 * dpr;
+        p.vx *= 0.991;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.r += p.vr;
+        if (p.y < h + 30) alive += 1;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.r);
+        ctx.globalAlpha = Math.max(0, 1 - frame / 240);
+        ctx.fillStyle = p.c;
+        ctx.fillRect(-p.s / 2, -p.s / 3, p.s, p.s * 0.6);
+        ctx.restore();
+      });
+      if (alive && frame < 240) raf = requestAnimationFrame(step);
+      else ctx.clearRect(0, 0, w, h);
+    };
+    raf = requestAnimationFrame(step);
+    return () => {
+      cancelAnimationFrame(raf);
+      ctx.clearRect(0, 0, w, h);
+    };
+  }, [burst, colorKey]);
+  return <canvas ref={ref} className="fixed inset-0 w-full h-full pointer-events-none" style={{ zIndex: 90 }} />;
+};
+
+const Podium = ({ rows, fmt }) => {
+  const mounted = useMounted();
+  if (!rows.length) return null;
+  const slots = rows.length === 1 ? [{ ...rows[0], place: 1 }] : rows.length === 2 ? [{ ...rows[1], place: 2 }, { ...rows[0], place: 1 }] : [{ ...rows[1], place: 2 }, { ...rows[0], place: 1 }, { ...rows[2], place: 3 }];
+  const H = { 1: 128, 2: 92, 3: 68 };
+  return (
+    <div className="flex items-end justify-center gap-2 sm:gap-4 pt-6 pb-1" data-testid="podium">
+      {slots.map((s) => (
+        <div key={s.p.id} className="flex flex-col items-center w-[31%] max-w-[170px]">
+          <div className="relative mb-2 flex flex-col items-center">
+            {s.place === 1 && <span className="ia-crown text-2xl absolute -top-7">👑</span>}
+            <div className={s.place === 1 ? 'ia-av-ring' : ''}>
+              <Avatar name={s.p.name} src={s.p.avatar} size={s.place === 1 ? 72 : 54} />
+            </div>
+          </div>
+          <div className="font-black text-sm truncate max-w-full">{s.p.name}</div>
+          <div className={`ia-big font-black ${s.place === 1 ? 'text-2xl ia-grad-text' : 'text-lg ia-accent'}`}>{fmt(s.v)}</div>
+          <div
+            className={`ia-pod-col w-full mt-2 rounded-t-2xl flex items-start justify-center pt-2 font-black text-2xl ${s.place === 1 ? 'ia-grad' : 'ia-sub'}`}
+            style={{ height: mounted ? H[s.place] : 6, transition: 'height .9s cubic-bezier(.2,.9,.25,1)', animationDelay: `${s.place === 1 ? 0.25 : s.place === 2 ? 0.1 : 0.4}s` }}
+          >
+            {s.place}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const TradingCard = ({ p, rank, mine }) => {
+  const ref = useRef(null);
+  const move = (e) => {
+    const el = ref.current;
+    if (!el || e.pointerType === 'touch') return;
+    const r = el.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width;
+    const y = (e.clientY - r.top) / r.height;
+    el.style.transform = `perspective(700px) rotateX(${(0.5 - y) * 11}deg) rotateY(${(x - 0.5) * 13}deg)`;
+    el.style.setProperty('--fx', `${x * 100}%`);
+    el.style.setProperty('--fy', `${y * 100}%`);
+  };
+  const leave = () => {
+    if (ref.current) ref.current.style.transform = '';
+  };
+  const stats = [
+    ['EST', p.card.est], ['SIŁ', p.card.str], ['DEF', p.card.def], ['V-T', p.card.vt], ['PRG', p.card.prg], ['REG', p.card.reg]
+  ];
+  return (
+    <div ref={ref} onPointerMove={move} onPointerLeave={leave} className={`ia-tcard ${mine ? 'me' : ''}`} style={{ width: 210, flex: '0 0 auto' }} data-testid="tcard">
+      <div className="ia-tcard-in p-3.5">
+        <div className="ia-tcard-foil" />
+        <div className="flex items-start justify-between relative">
+          <div>
+            <div className="ia-big text-[2.6rem] font-black leading-none ia-grad-text">{p.ovr}</div>
+            <div className="text-[9px] font-black tracking-[.25em] ia-muted mt-1">OVR</div>
+          </div>
+          <div className="text-right">
+            <div className="text-lg font-black leading-none">#{rank}</div>
+            <div className="text-[9px] font-black tracking-wider ia-muted mt-1 uppercase">{String(p.goal).split(' ')[0]}</div>
+          </div>
+        </div>
+        <div className="flex justify-center my-2.5 relative">
+          <div className="ia-av-ring"><Avatar name={p.name} src={p.avatar} size={84} /></div>
+        </div>
+        <div className="text-center font-black uppercase tracking-wide truncate relative">{p.name}</div>
+        <div className="mt-3 pt-3 border-t border-white/10 grid grid-cols-2 gap-x-4 gap-y-1.5 relative">
+          {stats.map(([k, v]) => (
+            <div key={k} className="flex items-baseline justify-between text-[11px]">
+              <span className="font-black tracking-wider ia-muted text-[10px]">{k}</span>
+              <span className={`ia-big font-black text-base ${v >= 80 ? 'ia-accent' : ''}`}>{v}</span>
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-[11px] font-bold relative">
+          <span title="Seria aktywnych dni">🔥 {p.streak}</span>
+          <span title="Osiągnięcia">🏅 {p.achCount}/{ACHIEVEMENTS.length}</span>
+          {mine && <span className="ia-accent">TY</span>}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const CROP = 260;
+const CROP_OUT = 200;
+const AvatarCropper = ({ src, onCancel, onSave }) => {
+  const [img, setImg] = useState(null);
+  const [zoom, setZoom] = useState(1);
+  const [off, setOff] = useState({ x: 0, y: 0 });
+  const drag = useRef(null);
+  useEffect(() => {
+    const im = new Image();
+    im.onload = () => setImg(im);
+    im.src = src;
+  }, [src]);
+  const base = img ? Math.max(CROP / img.naturalWidth, CROP / img.naturalHeight) : 1;
+  const dw = img ? img.naturalWidth * base * zoom : CROP;
+  const dh = img ? img.naturalHeight * base * zoom : CROP;
+  const eff = { x: clampN(off.x, -(dw - CROP) / 2, (dw - CROP) / 2), y: clampN(off.y, -(dh - CROP) / 2, (dh - CROP) / 2) };
+  const down = (e) => {
+    drag.current = { sx: e.clientX, sy: e.clientY, ox: eff.x, oy: eff.y };
+    if (e.currentTarget.setPointerCapture) e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const move = (e) => {
+    const d = drag.current;
+    if (d) setOff({ x: d.ox + e.clientX - d.sx, y: d.oy + e.clientY - d.sy });
+  };
+  const up = () => { drag.current = null; };
+  const save = () => {
+    if (!img) return;
+    const cv = document.createElement('canvas');
+    cv.width = CROP_OUT;
+    cv.height = CROP_OUT;
+    const c = cv.getContext('2d');
+    const s = CROP_OUT / CROP;
+    c.fillStyle = '#000';
+    c.fillRect(0, 0, CROP_OUT, CROP_OUT);
+    c.drawImage(img, ((CROP - dw) / 2 + eff.x) * s, ((CROP - dh) / 2 + eff.y) * s, dw * s, dh * s);
+    onSave(cv.toDataURL('image/jpeg', 0.82));
+  };
+  return (
+    <div onClick={onCancel} className="fixed inset-0 z-[60] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 ia-fade">
+      <div onClick={(e) => e.stopPropagation()} className="ia-glass ia-pop rounded-3xl w-full max-w-sm p-5 space-y-4" style={{ background: '#111113' }} data-testid="cropper">
+        <div className="flex items-center justify-between">
+          <h3 className="font-black text-sm uppercase tracking-wide">Zdjęcie profilowe</h3>
+          <button type="button" onClick={onCancel} className="ia-btn ia-ghost !p-2"><Icon name="close" /></button>
+        </div>
+        <div
+          className="relative mx-auto rounded-2xl overflow-hidden bg-black select-none cursor-grab"
+          style={{ width: CROP, height: CROP, touchAction: 'none' }}
+          onPointerDown={down}
+          onPointerMove={move}
+          onPointerUp={up}
+          onPointerCancel={up}
+        >
+          {img && <img src={src} alt="" draggable={false} style={{ position: 'absolute', maxWidth: 'none', width: dw, height: dh, left: (CROP - dw) / 2 + eff.x, top: (CROP - dh) / 2 + eff.y, pointerEvents: 'none' }} />}
+          <div className="absolute inset-0 rounded-full pointer-events-none" style={{ boxShadow: '0 0 0 400px rgba(0,0,0,.66)', border: '2px solid rgb(var(--ac))' }} />
+        </div>
+        <Slider label="Przybliżenie" value={zoom} min={1} max={3} step={0.05} onChange={setZoom} format={(v) => `${v.toFixed(2)}×`} />
+        <p className="text-[11px] ia-muted">Przeciągnij zdjęcie, aby ustawić twarz w kółku.</p>
+        <div className="grid grid-cols-2 gap-2">
+          <button type="button" onClick={onCancel} className="ia-btn ia-ghost">Anuluj</button>
+          <button type="button" onClick={save} disabled={!img} className="ia-btn ia-accent-bg" data-testid="crop-save"><Icon name="check" className="w-3.5 h-3.5" /> Użyj zdjęcia</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const BeforeAfter = ({ player, onClose }) => {
+  const photos = player.photos || [];
+  const [iB, setIB] = useState(photos.length - 1);
+  const [iA, setIA] = useState(0);
+  const [pos, setPos] = useState(50);
+  const b = photos[iB];
+  const a = photos[iA];
+  if (!a || !b) return null;
+  const aiB = evaluatePhysiqueAI(player, iB).overall;
+  const aiA = evaluatePhysiqueAI(player, iA).overall;
+  const days = a.ts && b.ts ? Math.round((a.ts - b.ts) / DAY_MS) : null;
+  const label = (ph) => `${ph.date} • ${ph.weight} kg`;
+  const stat = (k, v, good) => (
+    <div className="ia-sub rounded-2xl p-3 text-center">
+      <div className={`ia-big text-lg font-black ${good === undefined ? '' : good ? 'text-emerald-400' : 'text-rose-400'}`}>{v}</div>
+      <div className="text-[10px] ia-muted font-bold uppercase tracking-wide mt-0.5">{k}</div>
+    </div>
+  );
+  const dir = goalDir(player.goal);
+  const dW = a.weight - b.weight;
+  const dWaist = a.waist - b.waist;
+  return (
+    <div onClick={onClose} className="fixed inset-0 z-50 bg-black/88 backdrop-blur-md flex items-center justify-center p-3 ia-fade">
+      <div onClick={(e) => e.stopPropagation()} className="ia-glass ia-pop rounded-3xl w-full max-w-lg max-h-[96vh] overflow-y-auto" style={{ background: '#111113' }} data-testid="before-after">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+          <div>
+            <div className="font-black text-sm">{player.name} — przed / po</div>
+            <div className="text-xs ia-muted">{days !== null ? `${days} dni różnicy` : 'Porównanie zdjęć'}</div>
+          </div>
+          <button onClick={onClose} className="ia-btn ia-ghost !p-2"><Icon name="close" /></button>
+        </div>
+        <div className="relative w-full bg-black select-none overflow-hidden" style={{ height: 'min(58vh,500px)' }}>
+          <img src={a.url} alt="Po" className="absolute inset-0 w-full h-full object-cover" />
+          <img src={b.url} alt="Przed" className="absolute inset-0 w-full h-full object-cover" style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }} />
+          <div className="absolute top-0 bottom-0 w-0.5 pointer-events-none" style={{ left: `${pos}%`, background: 'rgb(var(--ac))', boxShadow: '0 0 18px rgb(var(--ac))' }}>
+            <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-9 h-9 rounded-full ia-grad flex items-center justify-center shadow-xl"><Icon name="columns" className="w-4 h-4" /></div>
+          </div>
+          <span className="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-black/70 text-[11px] font-black tracking-wider">PRZED</span>
+          <span className="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-black/70 text-[11px] font-black tracking-wider ia-accent">PO</span>
+          <input type="range" min="0" max="100" value={pos} onChange={(e) => setPos(Number(e.target.value))} aria-label="Suwak przed i po" className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize" style={{ touchAction: 'pan-y' }} />
+        </div>
+        <div className="p-4 space-y-3 text-xs">
+          <div className="grid grid-cols-2 gap-2">
+            <select value={iB} onChange={(e) => setIB(Number(e.target.value))} className="ia-input">{photos.map((ph, i) => <option key={ph.id} value={i}>Przed: {label(ph)}</option>)}</select>
+            <select value={iA} onChange={(e) => setIA(Number(e.target.value))} className="ia-input">{photos.map((ph, i) => <option key={ph.id} value={i}>Po: {label(ph)}</option>)}</select>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {stat('Waga', fmtSigned(dW, 1, ' kg'), dir === 0 ? undefined : dir * dW > 0)}
+            {stat('Pas', fmtSigned(dWaist, 1, ' cm'), dWaist === 0 ? undefined : dWaist < 0)}
+            {stat('Ocena AI', fmtSigned(aiA - aiB, 1), aiA === aiB ? undefined : aiA > aiB)}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 /* ------------------------- Dane startowe / pamięć lokalna ------------------------- */
 const INITIAL_PLAYERS = [
   {
@@ -843,7 +1344,18 @@ const mergePlayers = (a, b) => {
     map.set(ph.id, { ...ex, reactions, comments: Array.from(cm.values()).sort((x, y) => (x.ts || 0) - (y.ts || 0)) });
   });
   const photos = Array.from(map.values()).sort((x, y) => (y.ts || 0) - (x.ts || 0));
-  return { ...base, photos, deletedPhotos: deleted, updatedAt: Math.max(a.updatedAt || 0, b.updatedAt || 0) };
+  // dzienniki (ważenia, serie / rekordy) tylko się powiększają – łączymy je, żeby nic nie zginęło
+  const unionBy = (xs, ys, keyFn) => {
+    const m = new Map();
+    [...(xs || []), ...(ys || [])].forEach((it) => { const k = keyFn(it); if (!m.has(k)) m.set(k, it); });
+    return Array.from(m.values()).sort((x, y) => (x.ts || 0) - (y.ts || 0));
+  };
+  // jedno ważenie na dzień – wygrywa najpóźniejsze (także po scaleniu z innym urządzeniem)
+  const perDay = new Map();
+  unionBy(a.weighIns, b.weighIns, (w) => w.ts).forEach((w) => perDay.set(dayKey(w.ts), w));
+  const weighIns = Array.from(perDay.values());
+  const prs = unionBy(a.prs, b.prs, (r) => r.id);
+  return { ...base, photos, weighIns, prs, deletedPhotos: deleted, updatedAt: Math.max(a.updatedAt || 0, b.updatedAt || 0) };
 };
 
 async function sbRequest(cfg, path, { method = 'GET', body, prefer } = {}) {
@@ -886,10 +1398,20 @@ const SYNC_META = {
 
 const TABS = [
   { id: 'ai_physique', label: 'Sylwetki', long: 'Zdjęcia & Sędzia AI', icon: 'camera' },
-  { id: 'ranking', label: 'Ranking', long: 'Tabela Ekipy & 1v1', icon: 'users' },
+  { id: 'ranking', label: 'Arena', long: 'Rywalizacja ekipy', icon: 'trophy' },
   { id: 'cpm', label: 'Kalorie', long: 'Wywiad kaloryczny', icon: 'activity' },
   { id: 'gym', label: 'Siłownia', long: 'Siłownia & Sztanga', icon: 'dumbbell' },
   { id: 'charts', label: 'Wykresy', long: 'Wykresy & DOTS', icon: 'chart' }
+];
+
+const SORTS = [
+  { id: 'ovr', label: 'Ogólny', get: (p) => p.ovr, fmt: (v) => String(v) },
+  { id: 'prog', label: 'Progres', get: (p) => p.prog.pts, fmt: (v) => fmtSigned(v, 1, ' pkt') },
+  { id: 'week', label: 'Liga tygodnia', get: (p) => p.week.pts, fmt: (v) => `${v} pkt` },
+  { id: 'ai', label: 'Ocena AI', get: (p) => p.ai.overall, fmt: (v) => `${Number(v).toFixed(1)}/10` },
+  { id: 'dots', label: 'DOTS', get: (p) => p.stats.dots, fmt: (v) => String(v) },
+  { id: 'total', label: 'Trójbój', get: (p) => p.stats.total1RM, fmt: (v) => `${v} kg` },
+  { id: 'bmi', label: 'BMI', get: (p) => parseFloat(p.bmiData.bmi) || 0, fmt: (v) => Number(v).toFixed(1), asc: true }
 ];
 
 const getGoalBadgeStyle = (goal) => {
@@ -905,7 +1427,17 @@ export default function App() {
   const [activeId, setActiveId] = useState(() => localStorage.getItem('iron_archive_active_id') || players[0]?.id || 'p_olek');
   const [pinnedId, setPinnedId] = useState(() => localStorage.getItem('iron_archive_pinned') || '');
   const [activeTab, setActiveTab] = useState('ai_physique');
-  const [sortBy, setSortBy] = useState('ai');
+  const [sortBy, setSortBy] = useState('ovr');
+  const [splash, setSplash] = useState(() => {
+    try { return !sessionStorage.getItem('ia_splash'); } catch (_) { return true; }
+  });
+  const [confetti, setConfetti] = useState(0);
+  const [cropSrc, setCropSrc] = useState(null);
+  const [baPlayerId, setBaPlayerId] = useState(null);
+  const [weighInput, setWeighInput] = useState('');
+  const [histLift, setHistLift] = useState('bench');
+  const [nowTs, setNowTs] = useState(() => Date.now());
+  const spotRef = useRef(null);
   const [themeKey, setThemeKey] = useState(() => {
     const s = localStorage.getItem(THEME_KEY);
     return s && THEMES[s] ? s : 'volt';
@@ -977,6 +1509,50 @@ export default function App() {
     return () => clearTimeout(t);
   }, [toast]);
 
+  // intro w stylu filmowym – raz na sesję
+  useEffect(() => {
+    if (!splash) return undefined;
+    try { sessionStorage.setItem('ia_splash', '1'); } catch (_) {}
+    const t = setTimeout(() => setSplash(false), 2900);
+    return () => clearTimeout(t);
+  }, [splash]);
+
+  // zegar do ligi tygodniowej i serii (odświeżane co minutę)
+  useEffect(() => {
+    const iv = setInterval(() => setNowTs(Date.now()), 60000);
+    return () => clearInterval(iv);
+  }, []);
+
+  // światło podążające za kursorem + poświata na kartach pod myszką
+  useEffect(() => {
+    let raf = 0;
+    let ev = null;
+    const onMove = (e) => {
+      if (e.pointerType === 'touch') return;
+      ev = e;
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        if (!ev) return;
+        if (spotRef.current) {
+          spotRef.current.style.setProperty('--mx', `${ev.clientX}px`);
+          spotRef.current.style.setProperty('--my', `${ev.clientY}px`);
+        }
+        const card = ev.target && ev.target.closest ? ev.target.closest('.ia-card') : null;
+        if (card) {
+          const r = card.getBoundingClientRect();
+          card.style.setProperty('--cx', `${ev.clientX - r.left}px`);
+          card.style.setProperty('--cy', `${ev.clientY - r.top}px`);
+        }
+      });
+    };
+    window.addEventListener('pointermove', onMove, { passive: true });
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+
   useEffect(() => { localStorage.setItem(THEME_KEY, themeKey); }, [themeKey]);
   useEffect(() => { if (activeId) localStorage.setItem('iron_archive_active_id', activeId); }, [activeId]);
   useEffect(() => { localStorage.setItem('iron_archive_pinned', pinnedId || ''); }, [pinnedId]);
@@ -1002,6 +1578,25 @@ export default function App() {
       return raw.map((p) => (prev.includes(p) ? p : social ? { ...p, _synced: false } : { ...p, updatedAt: now, _synced: false }));
     });
   }, []);
+
+  // Zmiana jednego zawodnika + wykrycie nowych osiągnięć (konfetti i komunikat)
+  const mutatePlayer = useCallback((id, fn, { confetti: forceConfetti = false, toastMsg = '' } = {}) => {
+    const before = playersRef.current.find((p) => p.id === id);
+    if (!before) return;
+    const after = fn(before);
+    commit((prev) => prev.map((p) => (p.id === id ? fn(p) : p)));
+    const had = new Set(achievementsOf(before).filter((a) => a.got).map((a) => a.id));
+    const fresh = achievementsOf(after).filter((a) => a.got && !had.has(a.id));
+    if (fresh.length) {
+      setConfetti((n) => n + 1);
+      showToast(`🏅 Osiągnięcie: ${fresh.map((a) => a.title).join(', ')}`);
+    } else if (forceConfetti) {
+      setConfetti((n) => n + 1);
+      if (toastMsg) showToast(toastMsg);
+    } else if (toastMsg) {
+      showToast(toastMsg);
+    }
+  }, [commit, showToast]);
 
   // 2) Wysyłanie zmian do chmury – po jednym wierszu na zawodnika, ze scaleniem z tym, co jest już w chmurze
   const flushNow = useCallback(async () => {
@@ -1267,53 +1862,84 @@ export default function App() {
 
   /* ------------------------------ Dane wyliczane ------------------------------ */
   const enrichedPlayers = useMemo(() => {
+    const since = startOfWeek(nowTs);
+    const base = players.map((p) => {
+      const rm = {};
+      LIFT_KEYS.forEach((k) => { rm[k] = bestRM(p, k); });
+      const total1RM = rm.bench + rm.squat + rm.deadlift;
+      const dots = calcDOTS(p.currentWeight, total1RM);
+      const ai = evaluatePhysiqueAI(p, 0);
+      const prog = calcProgress(p);
+      const week = weekStats(p, since, nowTs);
+      const achs = achievementsOf(p, nowTs);
+      const achCount = achs.filter((a) => a.got).length;
+      const ovr = calcOVR({ ai: ai.overall, dots, streak: week.streak, achCount, progPts: prog.pts });
+      return { p, rm, total1RM, dots, ai, prog, week, achs, achCount, ovr };
+    });
+
     let bestAiId = null; let maxAi = -1;
     let bestDotsId = null; let maxDots = -1;
     let maxWhtrId = null; let maxWhtr = -1;
+    let bestProgId = null; let maxProg = 0;
+    let bestWeekId = null; let maxWeek = 0;
+    let bestStreakId = null; let maxStreak = 2;
     const bufetIds = new Set();
-
-    players.forEach((p) => {
-      const evalRes = evaluatePhysiqueAI(p, 0);
-      if (evalRes.overall > maxAi) { maxAi = evalRes.overall; bestAiId = p.id; }
-      const total = calc1RM(p.lifts.bench.weight, p.lifts.bench.reps) + calc1RM(p.lifts.squat.weight, p.lifts.squat.reps) + calc1RM(p.lifts.deadlift.weight, p.lifts.deadlift.reps);
-      const dots = calcDOTS(p.currentWeight, total);
+    base.forEach(({ p, dots, ai, prog, week }) => {
+      if (ai.overall > maxAi) { maxAi = ai.overall; bestAiId = p.id; }
       if (dots > maxDots) { maxDots = dots; bestDotsId = p.id; }
       const whtr = (p.measurements?.waist?.current || 85) / p.heightCm;
       if (whtr > maxWhtr) { maxWhtr = whtr; maxWhtrId = p.id; }
       if (String(p.goal).toLowerCase().includes('redukcja') && p.currentWeight > p.startWeight) bufetIds.add(p.id);
+      if (prog.pts > maxProg) { maxProg = prog.pts; bestProgId = p.id; }
+      if (week.pts > maxWeek) { maxWeek = week.pts; bestWeekId = p.id; }
+      if (week.streak > maxStreak) { maxStreak = week.streak; bestStreakId = p.id; }
     });
 
-    return players.map((p) => {
-      const bench1RM = calc1RM(p.lifts.bench.weight, p.lifts.bench.reps);
-      const squat1RM = calc1RM(p.lifts.squat.weight, p.lifts.squat.reps);
-      const deadlift1RM = calc1RM(p.lifts.deadlift.weight, p.lifts.deadlift.reps);
-      const ohp1RM = calc1RM(p.lifts.ohp.weight, p.lifts.ohp.reps);
-      const total1RM = bench1RM + squat1RM + deadlift1RM;
-      const dots = calcDOTS(p.currentWeight, total1RM);
+    return base.map(({ p, rm, total1RM, dots, ai, prog, week, achs, achCount, ovr }) => {
       const bmiData = calcBMIData(p.currentWeight, p.heightCm, p.measurements.waist.current);
       const cpmData = calcCPMData(p.currentWeight, p.heightCm, p.age || 22, p.sex || 'M', p.pal || 1.55);
       if (p.tdee) cpmData.cpm = p.tdee; // dokładne TDEE z wywiadu ma pierwszeństwo
       const macros = calcMacros(p.dietKcal, p.currentWeight, p.dietProtein);
-      const ai = evaluatePhysiqueAI(p, 0);
 
       const badges = [];
+      const multi = players.length > 1;
       if (p.id === bestAiId) badges.push({ text: '👑 Król Estetyki', color: 'bg-amber-500/15 text-amber-300 border-amber-500/35' });
       if (p.id === bestDotsId) badges.push({ text: '🏋️ Najsilniejszy Dzik', color: 'bg-rose-500/15 text-rose-300 border-rose-500/35' });
+      if (multi && p.id === bestProgId) badges.push({ text: '📈 Największy Progres', color: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/35' });
+      if (multi && p.id === bestWeekId) badges.push({ text: '⚡ Lider Tygodnia', color: 'bg-sky-500/15 text-sky-300 border-sky-500/35' });
+      if (multi && p.id === bestStreakId) badges.push({ text: `🔥 Seria ${week.streak} dni`, color: 'bg-orange-500/15 text-orange-300 border-orange-500/35' });
       if (bufetIds.has(p.id)) badges.push({ text: '🍔 Król Bufetu', color: 'bg-orange-500/15 text-orange-300 border-orange-500/35' });
-      if (p.id === maxWhtrId && players.length > 1) badges.push({ text: '📏 Największy Bęben', color: 'bg-purple-500/15 text-purple-300 border-purple-500/35' });
+      if (p.id === maxWhtrId && multi) badges.push({ text: '📏 Największy Bęben', color: 'bg-purple-500/15 text-purple-300 border-purple-500/35' });
 
-      return { ...p, stats: { bench1RM, squat1RM, deadlift1RM, ohp1RM, total1RM, dots }, bmiData, cpmData, macros, ai, badges };
+      const card = {
+        est: Math.min(99, Math.round(ai.overall * 10)),
+        str: Math.min(99, Math.round(dots / 3.6)),
+        def: Math.min(99, Math.round(parseFloat(ai.defScore) * 10)),
+        vt: Math.min(99, Math.round(parseFloat(ai.vScore) * 10)),
+        prg: Math.round(clampN(50 + prog.pts * 0.8, 10, 99)),
+        reg: Math.min(99, 25 + week.streak * 7 + Math.min(week.activeDays, 7) * 3)
+      };
+
+      return {
+        ...p,
+        stats: { bench1RM: rm.bench, squat1RM: rm.squat, deadlift1RM: rm.deadlift, ohp1RM: rm.ohp, total1RM, dots },
+        bmiData, cpmData, macros, ai, badges, prog, week, achs, achCount, ovr, card, streak: week.streak
+      };
     });
-  }, [players]);
+  }, [players, nowTs]);
 
+  const activeSort = SORTS.find((s) => s.id === sortBy) || SORTS[0];
   const sortedPlayers = useMemo(() => {
-    const copy = [...enrichedPlayers];
-    if (sortBy === 'ai') return copy.sort((a, b) => b.ai.overall - a.ai.overall);
-    if (sortBy === 'dots') return copy.sort((a, b) => b.stats.dots - a.stats.dots);
-    if (sortBy === 'total') return copy.sort((a, b) => b.stats.total1RM - a.stats.total1RM);
-    if (sortBy === 'bmi') return copy.sort((a, b) => parseFloat(a.bmiData.bmi) - parseFloat(b.bmiData.bmi));
-    return copy;
+    const s = SORTS.find((x) => x.id === sortBy) || SORTS[0];
+    return [...enrichedPlayers].sort((a, b) => (s.asc ? s.get(a) - s.get(b) : s.get(b) - s.get(a)));
   }, [enrichedPlayers, sortBy]);
+
+  const ovrRank = useMemo(() => {
+    const sorted = [...enrichedPlayers].sort((a, b) => b.ovr - a.ovr);
+    return Object.fromEntries(sorted.map((p, i) => [p.id, i + 1]));
+  }, [enrichedPlayers]);
+  const avatarByName = useMemo(() => Object.fromEntries(players.filter((p) => p.avatar).map((p) => [p.name, p.avatar])), [players]);
+  const feed = useMemo(() => buildFeed(players), [players]);
 
   const currentEnriched = enrichedPlayers.find((p) => p.id === activeId) || enrichedPlayers[0];
 
@@ -1401,28 +2027,82 @@ export default function App() {
       aiVision: finalAiVision
     };
 
-    commit((prev) =>
-      prev.map((p) => {
-        if (p.id !== activeId) return p;
-        const bench1RM = calc1RM(p.lifts.bench.weight, p.lifts.bench.reps);
-        return {
-          ...p,
-          currentWeight: w,
-          measurements: {
-            waist: { ...p.measurements.waist, current: waist },
-            biceps: { ...p.measurements.biceps, current: biceps },
-            chest: { ...p.measurements.chest, current: chest }
-          },
-          photos: [newPhotoEntry, ...(p.photos || [])],
-          history: [...(p.history || []), { date: todayStr.slice(0, 5), weight: w, waist, bench1RM, kcal: p.dietKcal, aiScore: Number(finalAiVision.overall) }]
-        };
-      })
+    const typedWeight = parseFloat(bodyForm.weight);
+    mutatePlayer(
+      activeId,
+      (p) => ({
+        ...p,
+        currentWeight: w,
+        measurements: {
+          waist: { ...p.measurements.waist, current: waist },
+          biceps: { ...p.measurements.biceps, current: biceps },
+          chest: { ...p.measurements.chest, current: chest }
+        },
+        photos: [newPhotoEntry, ...(p.photos || [])],
+        weighIns: typedWeight ? [...(p.weighIns || []), { ts: newPhotoEntry.ts, w: typedWeight }] : p.weighIns || [],
+        history: [...(p.history || []), { date: todayStr.slice(0, 5), weight: w, waist, bench1RM: bestRM(p, 'bench'), kcal: p.dietKcal, aiScore: Number(finalAiVision.overall) }]
+      }),
+      { toastMsg: 'Zdjęcie zapisane ✓' }
     );
 
     setPhotoIdxMap((prev) => ({ ...prev, [activeId]: 0 }));
     setRawPhotoFile(null);
     setBodyForm({ weight: '', waist: '', biceps: '', chest: '', note: '', photoPreview: null, autoAiResult: null });
-    showToast('Zdjęcie zapisane ✓');
+  };
+
+  /* --------------------------- Awatar / ważenie / rekordy --------------------------- */
+  const handleAvatarFile = (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || isLocked) return;
+    const reader = new FileReader();
+    reader.onload = () => setCropSrc(String(reader.result));
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveAvatar = (dataUrl) => {
+    if (isLocked) return;
+    mutatePlayer(activeId, (p) => ({ ...p, avatar: dataUrl }), { toastMsg: 'Zdjęcie profilowe zapisane ✓' });
+    setCropSrc(null);
+  };
+
+  const handleRemoveAvatar = () => {
+    if (isLocked) return;
+    mutatePlayer(
+      activeId,
+      (p) => {
+        const { avatar, ...rest } = p;
+        return rest;
+      },
+      { toastMsg: 'Usunięto zdjęcie profilowe' }
+    );
+  };
+
+  const handleQuickWeigh = (e) => {
+    e.preventDefault();
+    if (isLocked) return;
+    const w = parseFloat(String(weighInput).replace(',', '.'));
+    if (!w || w < 30 || w > 250) {
+      showToast('Podaj wagę w kilogramach (30–250).', 'warn');
+      return;
+    }
+    const now = Date.now();
+    const today = dayKey(now);
+    const label = shortDate(now);
+    mutatePlayer(
+      activeId,
+      (p) => {
+        const others = (p.weighIns || []).filter((x) => dayKey(x.ts) !== today); // jedno ważenie na dzień – ostatnie wygrywa
+        const hist = [...(p.history || [])];
+        const last = hist[hist.length - 1];
+        const entry = { date: label, weight: w, waist: p.measurements.waist.current, bench1RM: bestRM(p, 'bench'), kcal: p.dietKcal, aiScore: last?.aiScore || 0 };
+        if (last && last.date === label) hist[hist.length - 1] = { ...last, weight: w };
+        else hist.push(entry);
+        return { ...p, currentWeight: w, weighIns: [...others, { ts: now, w }].sort((a, b) => a.ts - b.ts), history: hist };
+      },
+      { toastMsg: `Zapisano wagę: ${String(w).replace('.', ',')} kg ✓` }
+    );
+    setWeighInput('');
   };
 
   const handleDeletePhoto = (playerId, photoId) => {
@@ -1524,11 +2204,29 @@ export default function App() {
     const w = parseFloat(liftForm.weight);
     const r = parseInt(liftForm.reps, 10);
     if (!w || !r) return;
-    commit((prev) => prev.map((p) => (p.id !== activeId ? p : { ...p, lifts: { ...p.lifts, [liftForm.exercise]: { weight: w, reps: r } } })));
+    const k = liftForm.exercise;
+    const rm = calc1RM(w, r);
+    const now = Date.now();
+    const cur = playersRef.current.find((p) => p.id === activeId);
+    const isPR = Boolean(cur) && rm > bestRM(cur, k);
+    mutatePlayer(
+      activeId,
+      (p) => {
+        const prs = [...(p.prs || [])];
+        // pierwszy zapis: zachowaj dotychczasowy wynik jako punkt startowy do liczenia progresu
+        if (!prs.some((x) => x.lift === k) && p.lifts?.[k]?.weight) {
+          prs.push({ id: `base_${k}`, ts: now - 1, lift: k, weight: p.lifts[k].weight, reps: p.lifts[k].reps, rm: rmOf(p.lifts[k]), base: true });
+        }
+        prs.push({ id: `pr_${now}_${k}`, ts: now, lift: k, weight: w, reps: r, rm, pr: isPR });
+        // w „lifts” trzymamy najlepszą serię, żeby lżejszy trening nie obniżał rankingu
+        const lifts = rm >= rmOf(p.lifts?.[k]) ? { ...p.lifts, [k]: { weight: w, reps: r } } : p.lifts;
+        return { ...p, prs, lifts };
+      },
+      { confetti: isPR, toastMsg: isPR ? `🏆 Nowy rekord: ${LIFT_NAMES[k]} ${rm} kg (1RM)!` : 'Seria zapisana – stoper ruszył ⏱️' }
+    );
     setPlateWeight(w);
     setTimerSec(90);
     setTimerRunning(true);
-    showToast('Rekord zapisany – stoper ruszył ⏱️');
   };
 
   const handleAddPlayer = (e) => {
@@ -1587,13 +2285,34 @@ export default function App() {
   const rootStyle = { fontFamily: FONT, '--ac': theme.ac, '--ac2': theme.ac2, '--on': theme.on };
 
   const duelA = enrichedPlayers.find((p) => p.id === compA) || enrichedPlayers[0];
-  const duelB = enrichedPlayers.find((p) => p.id === compB) || enrichedPlayers[Math.min(1, enrichedPlayers.length - 1)];
+  const duelB = enrichedPlayers.find((p) => p.id === compB && p.id !== duelA?.id) || enrichedPlayers.find((p) => p.id !== duelA?.id) || duelA;
+
+  /* ------------------------------ Arena: dane tygodnia ------------------------------ */
+  const weekNo = weekIndex(nowTs) + 1;
+  const leftMs = Math.max(0, startOfWeek(nowTs) + 7 * DAY_MS - nowTs);
+  const leftD = Math.floor(leftMs / DAY_MS);
+  const leftH = Math.floor((leftMs % DAY_MS) / 3600000);
+  const challenge = CHALLENGES[((weekIndex(nowTs) % CHALLENGES.length) + CHALLENGES.length) % CHALLENGES.length];
+  const challengeRows = enrichedPlayers.map((p) => ({ p, v: challenge.metric(p.week) })).sort((a, b) => b.v - a.v);
+  const leagueRows = [...enrichedPlayers].sort((a, b) => b.week.pts - a.week.pts);
+  const maxLeague = Math.max(1, ...leagueRows.map((p) => p.week.pts));
+  const podiumRows = sortedPlayers.slice(0, 3).map((p) => ({ p, v: activeSort.get(p) }));
+
+  const liftHist = (currentEnriched?.prs || [])
+    .filter((r) => r.lift === histLift)
+    .sort((a, b) => (a.ts || 0) - (b.ts || 0))
+    .map((r) => ({ date: r.base ? 'Start' : shortDate(r.ts), rm: r.rm }));
+  const recentSets = [...(currentEnriched?.prs || [])].filter((r) => !r.base).sort((a, b) => b.ts - a.ts).slice(0, 8);
 
   /* ==================================== UI ==================================== */
   return (
     <div className="ia-root" style={rootStyle}>
       <style>{STYLES}</style>
-      <div className="ia-aurora"><div className="ia-grid" /><div className="ia-blob a" /><div className="ia-blob b" /><div className="ia-blob c" /></div>
+      <div className="ia-aurora"><div ref={spotRef} className="ia-spot" /><div className="ia-grid" /><div className="ia-blob a" /><div className="ia-blob b" /><div className="ia-blob c" /></div>
+      <div className="ia-grain" />
+      <div className="ia-vig" />
+      {splash && <Splash />}
+      <Confetti burst={confetti} colorKey={`${theme.swatch},#ffffff,#fbbf24,#f43f5e,#22d3ee,#a78bfa`} />
 
       {toast && (
         <div key={toast.id} className={`ia-toast ${toast.tone === 'warn' ? 'bg-amber-400 text-stone-950' : 'ia-grad'} shadow-2xl`}>{toast.msg}</div>
@@ -1624,6 +2343,12 @@ export default function App() {
             </div>
           </div>
         )}
+
+        {cropSrc && <AvatarCropper src={cropSrc} onCancel={() => setCropSrc(null)} onSave={handleSaveAvatar} />}
+        {baPlayerId && (() => {
+          const bp = players.find((x) => x.id === baPlayerId);
+          return bp ? <BeforeAfter player={bp} onClose={() => setBaPlayerId(null)} /> : null;
+        })()}
 
         {/* ---------------------------- USTAWIENIA ---------------------------- */}
         {showSettings && (
@@ -1723,7 +2448,7 @@ export default function App() {
             <div className="flex items-center gap-2 overflow-x-auto ia-scroll flex-1 min-w-0 py-0.5">
               {enrichedPlayers.map((p) => (
                 <button key={p.id} onClick={() => setActiveId(p.id)} className={`ia-chip ${activeId === p.id ? 'on' : ''}`}>
-                  <Avatar name={p.name} size={24} />
+                  <Avatar name={p.name} src={p.avatar} size={24} />
                   <span>{p.name}</span>
                   {pinnedId === p.id && <Icon name="lock" className="w-3 h-3" />}
                 </button>
@@ -1771,6 +2496,54 @@ export default function App() {
         )}
 
         <main className="max-w-7xl mx-auto px-4 pt-5 space-y-5">
+          {/* ------------------------------ HERO ------------------------------ */}
+          {currentEnriched && (
+            <section className="ia-hero ia-cine p-5 sm:p-7" data-testid="hero">
+              <div className="relative z-10 flex flex-col sm:flex-row sm:items-center gap-5">
+                <div className="relative shrink-0 self-start">
+                  <div className="ia-av-ring"><Avatar name={currentEnriched.name} src={currentEnriched.avatar} size={104} /></div>
+                  {!isLocked && (
+                    <label title="Zmień zdjęcie profilowe" className="absolute -bottom-1 -right-1 w-10 h-10 rounded-full ia-grad flex items-center justify-center cursor-pointer shadow-xl hover:scale-110 transition-transform">
+                      <Icon name="camera" className="w-[18px] h-[18px]" />
+                      <input type="file" accept="image/*" onChange={handleAvatarFile} className="hidden" data-testid="avatar-input" />
+                    </label>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[11px] font-black tracking-[.22em] ia-accent uppercase">Miejsce #{ovrRank[currentEnriched.id]} w arenie • {currentEnriched.goal}</div>
+                  <h2 className="ia-big text-4xl sm:text-6xl font-black uppercase leading-[.95] mt-1.5 truncate">{currentEnriched.name}</h2>
+                  <div className="flex flex-wrap items-center gap-2 mt-3 text-[11px] font-bold">
+                    <span className="px-2.5 py-1 rounded-full bg-white/8 border border-white/10">🔥 seria {currentEnriched.streak} {currentEnriched.streak === 1 ? 'dzień' : 'dni'}</span>
+                    <span className="px-2.5 py-1 rounded-full bg-white/8 border border-white/10">⚡ {currentEnriched.week.pts} pkt w tygodniu</span>
+                    <span className="px-2.5 py-1 rounded-full bg-white/8 border border-white/10">🏅 {currentEnriched.achCount}/{ACHIEVEMENTS.length}</span>
+                    <span className="px-2.5 py-1 rounded-full bg-white/8 border border-white/10">📈 progres {fmtSigned(currentEnriched.prog.pts, 1)}</span>
+                    {currentEnriched.avatar && !isLocked && (
+                      <button type="button" onClick={handleRemoveAvatar} className="text-[11px] ia-faint hover:text-white underline underline-offset-2">usuń zdjęcie profilowe</button>
+                    )}
+                  </div>
+                </div>
+                <div className="flex sm:flex-col items-center gap-2 sm:gap-0 sm:text-center shrink-0">
+                  <div className="ia-big text-6xl sm:text-7xl font-black leading-none ia-grad-text"><CountUp value={currentEnriched.ovr} /></div>
+                  <div className="text-[10px] font-black tracking-[.3em] ia-muted sm:mt-1.5">OVR</div>
+                </div>
+              </div>
+              {!isLocked ? (
+                <form onSubmit={handleQuickWeigh} className="relative z-10 mt-5 pt-4 border-t border-white/10 flex flex-wrap items-center gap-2 text-xs">
+                  <span className="font-black flex items-center gap-1.5"><Icon name="scale" className="w-4 h-4 ia-accent" /> Szybkie ważenie</span>
+                  <input type="text" inputMode="decimal" autoComplete="off" placeholder={String(currentEnriched.currentWeight)} value={weighInput} onChange={(e) => setWeighInput(e.target.value)} aria-label="Waga w kilogramach" className="ia-input !w-28" data-testid="weigh-input" />
+                  <button type="submit" className="ia-btn ia-accent-bg" data-testid="weigh-save">Zapisz wagę</button>
+                  <span className="ia-muted text-[11px]">
+                    {(currentEnriched.weighIns || []).length
+                      ? `Ostatnio: ${String(currentEnriched.weighIns[currentEnriched.weighIns.length - 1].w).replace('.', ',')} kg • ${timeAgo(currentEnriched.weighIns[currentEnriched.weighIns.length - 1].ts, nowTs)}`
+                      : 'Waż się rano na czczo – każdy zapis to punkty w lidze tygodnia.'}
+                  </span>
+                </form>
+              ) : (
+                <div className="relative z-10 mt-4 text-[11px] ia-muted">Przeglądasz profil znajomego – wybierz swoje imię u góry (albo odepnij „Mój telefon”), aby coś zapisać.</div>
+              )}
+            </section>
+          )}
+
           {/* ------------------------- PASEK STATYSTYK AKTYWNEGO ------------------------- */}
           {currentEnriched && (
             <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -1840,7 +2613,7 @@ export default function App() {
 
           {/* ================== ZAKŁADKA 1: ZDJĘCIA & SĘDZIA AI ================== */}
           {activeTab === 'ai_physique' && currentEnriched && (
-            <div key="t1" className="grid grid-cols-1 lg:grid-cols-12 gap-5 ia-up">
+            <div key="t1" className="grid grid-cols-1 lg:grid-cols-12 gap-5 ia-cine">
               <div className="lg:col-span-4 ia-glass ia-card p-5 h-fit">
                 <h3 className="text-sm font-black uppercase tracking-tight mb-1 flex items-center gap-2">
                   <Icon name="camera" className="w-4 h-4 ia-accent" /> Dodaj zdjęcie ({currentEnriched.name})
@@ -1927,7 +2700,7 @@ export default function App() {
                         <div className="p-4 flex items-start justify-between gap-3">
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <Avatar name={p.name} size={26} />
+                              <Avatar name={p.name} src={p.avatar} size={26} />
                               <h4 className="text-base font-black">{p.name}</h4>
                               {p.badges.map((b, bIdx) => (<span key={bIdx} className={`px-2 py-0.5 rounded-md text-[10px] font-black border ${b.color}`}>{b.text}</span>))}
                             </div>
@@ -1952,6 +2725,9 @@ export default function App() {
                             <div className="absolute top-3 right-3 flex items-center gap-1.5">
                               {totalPhotos > 1 && (!pinnedId || pinnedId === p.id) && (
                                 <button type="button" onClick={() => handleDeletePhoto(p.id, displayedPhoto.id)} title="Usuń zdjęcie" className="bg-rose-600/90 hover:bg-rose-500 p-1.5 rounded-xl text-white transition-colors"><Icon name="trash" className="w-3.5 h-3.5" /></button>
+                              )}
+                              {totalPhotos > 1 && (
+                                <button type="button" onClick={() => setBaPlayerId(p.id)} className="bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-xl text-[11px] font-bold text-white flex items-center gap-1"><Icon name="columns" className="w-3 h-3" /> Przed/Po</button>
                               )}
                               <button type="button" onClick={() => setLightboxPhoto({ ...displayedPhoto, playerName: p.name })} className="bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-xl text-[11px] font-bold text-white">Powiększ</button>
                             </div>
@@ -1995,8 +2771,9 @@ export default function App() {
                           <div className="space-y-2">
                             <div className="font-bold text-[11px] uppercase flex items-center gap-1.5 ia-muted"><Icon name="message" className="w-3.5 h-3.5" /> Komentarze ekipy ({comments.length})</div>
                             {comments.map((c, cIdx) => (
-                              <div key={cIdx} className="px-3 py-2 rounded-2xl rounded-tl-md bg-white/6 text-[11.5px] border border-white/8 ia-fade">
-                                <span className="font-black ia-accent">{c.author}: </span><span className="text-neutral-200">{c.text}</span>
+                              <div key={cIdx} className="px-3 py-2 rounded-2xl rounded-tl-md bg-white/6 text-[11.5px] border border-white/8 ia-fade flex items-start gap-2">
+                                <Avatar name={c.author} src={avatarByName[c.author]} size={18} />
+                                <div className="min-w-0"><span className="font-black ia-accent">{c.author}: </span><span className="text-neutral-200">{c.text}</span></div>
                               </div>
                             ))}
                             {!isLocked && displayedPhoto && (
@@ -2015,64 +2792,165 @@ export default function App() {
             </div>
           )}
 
-          {/* ================== ZAKŁADKA 2: RANKING & 1v1 ================== */}
+          {/* ================== ZAKŁADKA 2: ARENA (RYWALIZACJA) ================== */}
           {activeTab === 'ranking' && (
-            <div key="t2" className="space-y-5 ia-up">
-              <div className="ia-glass ia-card p-5 overflow-x-auto">
-                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div key="t2" className="space-y-5 ia-cine">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <div className="text-[11px] font-black tracking-[.25em] ia-accent uppercase">Tydzień {weekNo} • do końca {leftD} d {leftH} h</div>
+                  <h2 className="ia-big text-3xl sm:text-4xl font-black uppercase leading-none mt-1.5">Arena <span className="ia-grad-text">ekipy</span></h2>
+                </div>
+                <p className="text-xs ia-muted max-w-sm">Liczy się postęp względem własnego startu i regularność – a nie to, kto zaczynał z wyższego poziomu.</p>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div className="ia-glass ia-card p-5 space-y-4 ia-up" data-testid="challenge">
+                  <div className="flex items-start gap-3">
+                    <div className="w-12 h-12 rounded-2xl ia-soft flex items-center justify-center text-2xl shrink-0">{challenge.icon}</div>
+                    <div className="min-w-0">
+                      <div className="text-[10px] font-black tracking-[.2em] ia-muted uppercase">Wyzwanie tygodnia</div>
+                      <div className="font-black text-lg leading-tight">{challenge.title}</div>
+                      <div className="text-xs ia-muted mt-0.5">{challenge.desc}</div>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    {challengeRows.map(({ p, v }, i) => (
+                      <div key={p.id} className="space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold flex items-center gap-2"><Avatar name={p.name} src={p.avatar} size={22} />{p.name}{i === 0 && v > 0 && enrichedPlayers.length > 1 && <span className="ia-crown">👑</span>}</span>
+                          <span className="font-black tabular-nums">{Number.isInteger(v) ? v : v.toFixed(1)} <span className="ia-muted font-semibold">/ {challenge.goal} {challenge.unit}</span></span>
+                        </div>
+                        <div className="h-2 rounded-full bg-white/10 overflow-hidden"><div className="h-full ia-grad rounded-full" style={{ width: `${Math.min(100, (v / challenge.goal) * 100)}%`, transition: 'width 1s cubic-bezier(.2,.8,.2,1)' }} /></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="ia-glass ia-card p-5 space-y-4 ia-up" style={{ animationDelay: '80ms' }} data-testid="league">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-[10px] font-black tracking-[.2em] ia-muted uppercase">Liga tygodnia</div>
+                      <div className="font-black text-lg leading-tight">Punkty za aktywność</div>
+                    </div>
+                    <Icon name="zap" className="w-5 h-5 ia-accent" />
+                  </div>
+                  <div className="space-y-3">
+                    {leagueRows.map((p, i) => (
+                      <div key={p.id}>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold flex items-center gap-2"><span className="w-4 text-center ia-muted">{i + 1}.</span><Avatar name={p.name} src={p.avatar} size={22} />{p.name}{i === 0 && p.week.pts > 0 && enrichedPlayers.length > 1 && <span className="ia-crown">👑</span>}</span>
+                          <span className="font-black ia-accent tabular-nums">{p.week.pts} pkt</span>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-white/10 overflow-hidden mt-1.5"><div className="h-full ia-grad rounded-full" style={{ width: `${(p.week.pts / maxLeague) * 100}%`, transition: 'width 1s cubic-bezier(.2,.8,.2,1)' }} /></div>
+                        <div className="text-[10px] ia-faint mt-1">⚖️ {p.week.weighDays} dni • 📸 {p.week.photos} • 🏆 {p.week.prCount} PR • 🏋️ {p.week.sets} serii</div>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[11px] ia-muted leading-relaxed">Punkty: ważenie +5, zdjęcie +20, nowy rekord +30, zapisana seria +4, każdy aktywny dzień +3. Liga zeruje się w poniedziałek o północy.</p>
+                </div>
+              </div>
+
+              <div className="ia-glass ia-card p-5 space-y-4 ia-up" style={{ animationDelay: '120ms' }} data-testid="standings">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <h2 className="text-base font-black uppercase tracking-tight">Klasyfikacja ekipy</h2>
-                  <div className="ia-seg text-xs">
-                    {[{ id: 'ai', label: 'Ocena AI' }, { id: 'dots', label: 'Siła DOTS' }, { id: 'total', label: 'Trójbój' }, { id: 'bmi', label: 'BMI' }].map((s) => (
+                  <div className="ia-seg text-xs overflow-x-auto ia-scroll max-w-full">
+                    {SORTS.map((s) => (
                       <button key={s.id} onClick={() => setSortBy(s.id)} className={sortBy === s.id ? 'on' : ''}>{s.label}</button>
                     ))}
                   </div>
                 </div>
-                <table className="w-full text-left border-collapse text-xs min-w-[640px]">
-                  <thead>
-                    <tr className="border-b border-white/10 ia-muted uppercase text-[10px] tracking-wide">
-                      <th className="py-3 px-2">#</th><th className="py-3 px-2">Zawodnik</th><th className="py-3 px-2">Cel & makro</th><th className="py-3 px-2">Waga</th><th className="py-3 px-2">BMI & BF</th><th className="py-3 px-2">V-Taper</th><th className="py-3 px-2">DOTS</th><th className="py-3 px-2 text-right">AI</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedPlayers.map((p, idx) => {
-                      const latestPhoto = p.photos?.[0];
-                      return (
-                        <tr key={p.id} className="border-b border-white/5 hover:bg-white/5 transition-colors ia-up" style={{ animationDelay: `${idx * 60}ms` }}>
+                <Podium key={sortBy} rows={podiumRows} fmt={activeSort.fmt} />
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs min-w-[680px]">
+                    <thead>
+                      <tr className="border-b border-white/10 ia-muted uppercase text-[10px] tracking-wide">
+                        <th className="py-3 px-2">#</th><th className="py-3 px-2">Zawodnik</th><th className="py-3 px-2">Waga</th><th className="py-3 px-2">Progres</th><th className="py-3 px-2">Tydzień</th><th className="py-3 px-2">DOTS</th><th className="py-3 px-2">AI</th><th className="py-3 px-2 text-right">OVR</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedPlayers.map((p, idx) => (
+                        <tr key={p.id} onClick={() => setActiveId(p.id)} className={`border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer ia-up ${p.id === activeId ? 'bg-white/[.035]' : ''}`} style={{ animationDelay: `${idx * 60}ms` }}>
                           <td className="py-3 px-2 font-black text-base">{['🥇', '🥈', '🥉'][idx] || `${idx + 1}.`}</td>
                           <td className="py-3 px-2">
                             <div className="flex items-center gap-3">
-                              {latestPhoto && <img src={latestPhoto.url} alt={p.name} onClick={() => setLightboxPhoto({ ...latestPhoto, playerName: p.name })} className="w-11 h-14 object-cover rounded-xl border border-white/10 cursor-zoom-in hover:scale-105 transition-transform" />}
+                              <Avatar name={p.name} src={p.avatar} size={40} />
                               <div>
                                 <div className="font-black text-sm flex items-center gap-1.5 flex-wrap"><span>{p.name}</span>{p.badges[0] && <span className={`px-1.5 py-0.5 rounded text-[9px] font-black border ${p.badges[0].color}`}>{p.badges[0].text}</span>}</div>
-                                <div className="text-[11px] ia-muted">{p.heightCm} cm</div>
+                                <div className="text-[11px] ia-muted">{p.goal} • {p.heightCm} cm</div>
                               </div>
                             </div>
                           </td>
-                          <td className="py-3 px-2">
-                            <span className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-bold border ${getGoalBadgeStyle(p.goal)}`}>{p.goal} • {p.dietKcal} kcal</span>
-                            <div className="text-[11px] mt-1 ia-muted">B:{p.macros.protein}g T:{p.macros.fat}g W:{p.macros.carbs}g</div>
-                          </td>
                           <td className="py-3 px-2 font-black text-sm tabular-nums">{p.currentWeight} kg</td>
-                          <td className="py-3 px-2"><div className="font-black text-sm tabular-nums">BMI {p.bmiData.bmi}</div><div className={`text-[11px] ${p.bmiData.tone}`}>~{p.ai.estBf}% BF</div></td>
-                          <td className="py-3 px-2 font-bold tabular-nums">{p.ai.vTaper}</td>
+                          <td className="py-3 px-2">
+                            <div className={`font-black text-sm tabular-nums ${p.prog.pts > 0 ? 'text-emerald-400' : p.prog.pts < 0 ? 'text-rose-400' : ''}`}>{fmtSigned(p.prog.pts, 1)}</div>
+                            <div className="text-[10px] ia-muted">{fmtSigned(p.prog.dPct, 1, '% wagi')} • {fmtSigned(p.prog.strengthPct, 0, '% siły')}</div>
+                          </td>
+                          <td className="py-3 px-2 font-black tabular-nums">{p.week.pts}<span className="ia-muted font-semibold"> pkt</span></td>
                           <td className="py-3 px-2 font-black text-sm tabular-nums">{p.stats.dots}</td>
-                          <td className="py-3 px-2 text-right font-black ia-accent tabular-nums">{p.ai.overall}/10</td>
+                          <td className="py-3 px-2 font-bold tabular-nums">{p.ai.overall}/10</td>
+                          <td className="py-3 px-2 text-right font-black ia-accent tabular-nums text-base">{p.ovr}</td>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="space-y-3 ia-up" style={{ animationDelay: '160ms' }}>
+                <h3 className="text-sm font-black uppercase tracking-tight">Karty zawodników <span className="ia-muted">• najedź kursorem</span></h3>
+                <div className="flex gap-4 overflow-x-auto ia-scroll pb-3 pt-1 px-1 -mx-1">
+                  {[...enrichedPlayers].sort((a, b) => b.ovr - a.ovr).map((p) => (
+                    <TradingCard key={p.id} p={p} rank={ovrRank[p.id]} mine={p.id === activeId} />
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+                <div className="lg:col-span-3 ia-glass ia-card p-5 ia-up" data-testid="achievements">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-black uppercase tracking-tight">Osiągnięcia — {currentEnriched?.name}</h3>
+                    <span className="ia-accent font-black text-sm tabular-nums">{currentEnriched?.achCount}/{ACHIEVEMENTS.length}</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                    {(currentEnriched?.achs || []).map((a) => (
+                      <div key={a.id} title={a.desc} className={`ia-ach ia-sub rounded-2xl p-3 ${a.got ? '' : 'off'}`} data-got={a.got ? '1' : '0'}>
+                        <div className="text-2xl">{a.icon}</div>
+                        <div className="font-black text-xs mt-1.5">{a.title}</div>
+                        <div className="text-[10.5px] ia-muted mt-0.5 leading-snug">{a.desc}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="lg:col-span-2 ia-glass ia-card p-5 ia-up" data-testid="feed">
+                  <h3 className="text-sm font-black uppercase tracking-tight mb-4">Co się dzieje na arenie</h3>
+                  {feed.length === 0 ? (
+                    <p className="text-xs ia-muted leading-relaxed">Na razie cisza. Zapisz ważenie, serię na siłowni albo zdjęcie – każdy wpis pojawi się tutaj u całej ekipy.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {feed.map((ev, i) => (
+                        <div key={`${ev.who.id}-${ev.ts}-${i}`} className="flex items-start gap-2.5 text-xs ia-fade">
+                          <Avatar name={ev.who.name} src={ev.who.avatar} size={28} />
+                          <div className="min-w-0 flex-1">
+                            <div className="leading-snug"><strong className="font-black">{ev.who.name}</strong> <span className={ev.kind === 'pr' ? 'ia-accent font-bold' : 'ia-muted'}>{ev.text}</span></div>
+                            <div className="text-[10px] ia-faint mt-0.5">{timeAgo(ev.ts, nowTs)}</div>
+                          </div>
+                          <span className="shrink-0">{{ photo: '📸', pr: '🏆', set: '🏋️', weigh: '⚖️' }[ev.kind]}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {enrichedPlayers.length > 1 && duelA && duelB && (
                 <div className="ia-glass ia-card p-5 space-y-5 ia-up" style={{ animationDelay: '120ms' }}>
                   <h2 className="text-base font-black uppercase tracking-tight">Pojedynek 1v1 ⚔️</h2>
                   <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-                    <div className="flex items-center gap-2"><Avatar name={duelA.name} size={34} />
+                    <div className="flex items-center gap-2"><Avatar name={duelA.name} src={duelA.avatar} size={34} />
                       <select value={duelA.id} onChange={(e) => setCompA(e.target.value)} className="ia-input">{enrichedPlayers.map((p) => (<option key={p.id} value={p.id}>{p.name}</option>))}</select>
                     </div>
                     <span className="font-black ia-grad-text text-lg">VS</span>
-                    <div className="flex items-center gap-2"><Avatar name={duelB.name} size={34} />
+                    <div className="flex items-center gap-2"><Avatar name={duelB.name} src={duelB.avatar} size={34} />
                       <select value={duelB.id} onChange={(e) => setCompB(e.target.value)} className="ia-input">{enrichedPlayers.map((p) => (<option key={p.id} value={p.id}>{p.name}</option>))}</select>
                     </div>
                   </div>
@@ -2090,7 +2968,7 @@ export default function App() {
 
           {/* ================== ZAKŁADKA 3: WYWIAD KALORYCZNY ================== */}
           {activeTab === 'cpm' && currentEnriched && (
-            <div key="t3" className="max-w-3xl mx-auto ia-up">
+            <div key="t3" className="max-w-3xl mx-auto ia-cine">
               <div className="ia-glass ia-card p-5 sm:p-6 space-y-6">
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -2298,7 +3176,7 @@ export default function App() {
 
           {/* ================== ZAKŁADKA 4: SIŁOWNIA ================== */}
           {activeTab === 'gym' && currentEnriched && (
-            <div key="t4" className="grid grid-cols-1 lg:grid-cols-3 gap-5 ia-up">
+            <div key="t4" className="grid grid-cols-1 lg:grid-cols-3 gap-5 ia-cine">
               <div className="space-y-5">
                 <div className="ia-glass ia-card p-5">
                   <h3 className="text-sm font-black uppercase tracking-tight mb-3">Zapisz rekord / serię ({currentEnriched.name})</h3>
@@ -2337,7 +3215,7 @@ export default function App() {
                 <h3 className="text-sm font-black uppercase tracking-tight mb-4">Rekordy siłowe ekipy (1RM)</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[{ key: 'bench', label: 'Wyciskanie leżąc' }, { key: 'squat', label: 'Przysiad ze sztangą' }, { key: 'deadlift', label: 'Martwy ciąg' }, { key: 'ohp', label: 'Wyciskanie żołnierskie (OHP)' }].map((lift) => {
-                    const rows = enrichedPlayers.map((p) => ({ p, raw: p.lifts[lift.key], rm: calc1RM(p.lifts[lift.key].weight, p.lifts[lift.key].reps) })).sort((a, b) => b.rm - a.rm);
+                    const rows = enrichedPlayers.map((p) => ({ p, raw: p.lifts[lift.key], rm: bestRM(p, lift.key) })).sort((a, b) => b.rm - a.rm);
                     const best = rows[0]?.rm || 1;
                     return (
                       <div key={lift.key} className="p-4 rounded-2xl ia-sub space-y-3">
@@ -2345,7 +3223,7 @@ export default function App() {
                         {rows.map(({ p, raw, rm }, i) => (
                           <div key={p.id} className="text-xs space-y-1.5">
                             <div className="flex items-center justify-between">
-                              <span className="font-bold flex items-center gap-1.5"><Avatar name={p.name} size={18} />{p.name}{i === 0 && rows.length > 1 && ' 👑'}</span>
+                              <span className="font-bold flex items-center gap-1.5"><Avatar name={p.name} src={p.avatar} size={18} />{p.name}{i === 0 && rows.length > 1 && ' 👑'}</span>
                               <span><span className="ia-muted">{raw.weight} kg × {raw.reps}</span><span className="ml-2 font-black ia-accent tabular-nums">{rm} kg</span></span>
                             </div>
                             <div className="h-1 rounded-full bg-white/10 overflow-hidden"><div className="h-full ia-grad rounded-full" style={{ width: `${(rm / best) * 100}%`, transition: 'width 1s cubic-bezier(.2,.8,.2,1)' }} /></div>
@@ -2356,12 +3234,43 @@ export default function App() {
                   })}
                 </div>
               </div>
+              <div className="lg:col-span-3 ia-glass ia-card p-5 space-y-4" data-testid="pr-history">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h3 className="text-sm font-black uppercase tracking-tight">Historia siły – {currentEnriched.name}</h3>
+                  <div className="ia-seg overflow-x-auto ia-scroll max-w-full">
+                    {LIFT_KEYS.map((k) => (
+                      <button key={k} onClick={() => setHistLift(k)} className={histLift === k ? 'on' : ''}>{LIFT_NAMES[k]}</button>
+                    ))}
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                  <div className="lg:col-span-2 p-3 sm:p-4 rounded-2xl ia-sub overflow-x-auto">
+                    <LineChart hist={liftHist} metric="rm" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="text-[11px] ia-muted font-black uppercase tracking-wide">Ostatnie serie</div>
+                    {recentSets.length === 0 && <p className="text-xs ia-muted leading-relaxed">Zapisz pierwszą serię – od tego momentu liczymy Twoje rekordy i progres siły.</p>}
+                    {recentSets.map((r) => (
+                      <div key={r.id} className="ia-sub rounded-xl px-3 py-2 flex items-center justify-between text-xs">
+                        <div className="min-w-0">
+                          <div className="font-bold truncate">{LIFT_NAMES[r.lift] || r.lift} {r.weight} kg × {r.reps}</div>
+                          <div className="text-[10px] ia-faint">{timeAgo(r.ts, nowTs)}</div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <div className="font-black ia-accent tabular-nums">{r.rm} kg</div>
+                          {r.pr && <div className="text-[10px] font-black text-amber-300">🏆 REKORD</div>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
           {/* ================== ZAKŁADKA 5: WYKRESY ================== */}
           {activeTab === 'charts' && currentEnriched && (
-            <div key="t5" className="ia-glass ia-card p-5 space-y-5 ia-up">
+            <div key="t5" className="ia-glass ia-card p-5 space-y-5 ia-cine">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h3 className="text-sm font-black uppercase">Progres – {currentEnriched.name} <span className="ia-accent">• DOTS {currentEnriched.stats.dots}</span></h3>
                 <div className="ia-seg overflow-x-auto ia-scroll max-w-full">
