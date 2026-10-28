@@ -51,11 +51,11 @@ Zwróć WYŁĄCZNIE czysty obiekt JSON:
       }
     };
 
-    // Stabilne modele Google w darmowym pulpicie AI Studio
+    // Aktualne modele wskazane przez Google AI Studio
     const modelsToTry = [
-      'gemini-2.0-flash',
-      'gemini-flash-latest',
-      'gemini-2.5-flash-lite'
+      'gemini-3.5-flash-lite',
+      'gemini-3.5-flash',
+      'gemini-flash-latest'
     ];
 
     let responseData = null;
@@ -77,11 +77,6 @@ Zwróć WYŁĄCZNIE czysty obiekt JSON:
         if (response.ok && data?.candidates?.[0]?.content?.parts?.[0]?.text) {
           responseData = data;
           break;
-        }
-
-        // Jeśli trafiliśmy na limit rate limit (429), odczekaj chwilę przed kolejnym modelem
-        if (response.status === 429) {
-          await new Promise((r) => setTimeout(r, 1200));
         }
 
         lastError = data?.error?.message || `HTTP ${response.status} (${modelName})`;
