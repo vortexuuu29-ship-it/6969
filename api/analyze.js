@@ -20,6 +20,14 @@ module.exports = async function handler(req, res) {
 Przeanalizuj zdjęcie sylwetki i oceń je w skali 1.0 - 10.0.
 Dane zawodnika: Wzrost ${player?.heightCm || 184} cm, Waga ${player?.currentWeight || 84} kg, Cel: ${player?.goal || 'Redukcja'}, Pas ${player?.waist || 85} cm, Klatka ${player?.chest || 105} cm, Biceps ${player?.biceps || 38} cm.
 
+Najpierw ZWERYFIKUJ zdjęcie (pole "photoCheck"):
+- isBody: true tylko, gdy na zdjęciu widać sylwetkę człowieka (min. tułów) nadającą się do oceny; false dla zdjęć jedzenia, memów, screenów, zwierząt, zdjęć z internetu, ekranów, zdjęć twarzy bez sylwetki itp.
+- quality: "dobra" | "srednia" | "slaba" (światło, ostrość, kadr, odległość)
+- issue: krótki powód po polsku, jeśli isBody=false lub quality="slaba" (inaczej pusty tekst)
+- plausible: false, jeśli widoczna sylwetka wyraźnie nie pasuje do podanych danych (np. waga/wzrost/obwody ewidentnie sprzeczne ze zdjęciem)
+- plausibilityNote: krótko po polsku, co się nie zgadza (inaczej pusty tekst)
+Jeśli isBody=false, ustaw wszystkie oceny na 1.0.
+
 Zasady:
 1. Oceń poziom tkanki tłuszczowej (estBf) realistycznie na podstawie widocznej definicji brzucha na zdjęciu.
 2. W polu "verdict" napisz po polsku konkretną analizę w 3 częściach oddzielonych znakiem " | " (bez kropek w środku):
@@ -34,6 +42,7 @@ Zwróć WYŁĄCZNIE czysty obiekt JSON:
   "armScore": 6.2,
   "estBf": 18,
   "lightingNote": "Krótka ocena oświetlenia",
+  "photoCheck": { "isBody": true, "quality": "dobra", "issue": "", "plausible": true, "plausibilityNote": "" },
   "verdict": "Mocne strony: ... | Braki do poprawy: ... | Plan naprawczy: ..."
 }`;
 
@@ -102,13 +111,26 @@ Zwróć WYŁĄCZNIE czysty obiekt JSON:
     // Jeśli model użył separatora " | ", zostawiamy go; kropki zamieniamy tylko w starym, jednozdaniowym formacie
     const fullVerdict = (rawVerdict.includes(' | ') ? rawVerdict : rawVerdict.replace(/\.\s+/g, ' | ')).replace(/\.$/, '');
 
+    const pc = parsed.photoCheck && typeof parsed.photoCheck === 'object' ? parsed.photoCheck : {};
+    const isBody = pc.isBody !== false;
+    const quality = ['dobra', 'srednia', 'slaba'].includes(pc.quality) ? pc.quality : 'srednia';
+    const fallbackScore = isBody ? 6.0 : 1.0;
+    const clamp = (v) => Math.min(10, Math.max(1, Number(v) || fallbackScore));
+
     return res.status(200).json({
-      vScore: Number(parsed.vScore) || 6.0,
-      defScore: Number(parsed.defScore) || 6.0,
-      armScore: Number(parsed.armScore) || 6.0,
-      estBf: Number(parsed.estBf) || 18,
+      vScore: clamp(parsed.vScore),
+      defScore: clamp(parsed.defScore),
+      armScore: clamp(parsed.armScore),
+      estBf: Math.min(60, Math.max(4, Number(parsed.estBf) || 18)),
       lightingNote: parsed.lightingNote || 'Zweryfikowano przez Gemini Vision',
-      verdict: fullVerdict
+      verdict: fullVerdict,
+      photoCheck: {
+        isBody,
+        quality,
+        issue: String(pc.issue || '').slice(0, 200),
+        plausible: pc.plausible !== false,
+        plausibilityNote: String(pc.plausibilityNote || '').slice(0, 200)
+      }
     });
   } catch (err) {
     console.error('Krytyczny błąd w /api/analyze:', err);
