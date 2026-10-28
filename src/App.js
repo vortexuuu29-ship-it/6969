@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 
 /* ============================================================================
-   IRON // ARCHIVE
+   TRENdowaci
    - motyw oparty o zmienne CSS (płynne przejścia kolorów)
    - Wywiad kaloryczny zamiast prostego kalkulatora CPM
    - Zapis: "local-first" (localStorage) + Supabase, jeden wiersz na zawodnika,
@@ -48,6 +48,7 @@ end $$;`;
 
 /* --------------------------------- Ikony --------------------------------- */
 const ICONS = {
+  syringe: <><path d="m18 2 4 4" /><path d="m17 7 3-3" /><path d="M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.5 0-3.4L15 5" /><path d="m9 11 4 4" /><path d="m5 19-3 3" /><path d="m14 4 6 6" /></>,
   cpu: <><rect x="4" y="4" width="16" height="16" rx="2" /><rect x="9" y="9" width="6" height="6" /><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3" /></>,
   camera: <><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" /><circle cx="12" cy="13" r="3" /></>,
   users: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></>,
@@ -107,10 +108,10 @@ const STYLES = `
 .ia-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px);background-size:44px 44px;-webkit-mask-image:radial-gradient(ellipse at 50% 0%,#000 0%,transparent 70%);mask-image:radial-gradient(ellipse at 50% 0%,#000 0%,transparent 70%)}
 .ia-z{position:relative;z-index:1}
 
-.ia-glass{background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.025));border:1px solid rgba(255,255,255,.08);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 12px 32px -14px rgba(0,0,0,.7)}
+.ia-glass{background:linear-gradient(180deg,rgba(255,255,255,.065),rgba(255,255,255,.022));border:1px solid rgba(255,255,255,.08);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 14px 36px -16px rgba(0,0,0,.75)}
+.ia-h{display:flex;align-items:center;gap:.6rem}
+.ia-h::before{content:'';flex:none;width:4px;height:1.1em;border-radius:4px;background:linear-gradient(180deg,rgb(var(--ac)),rgb(var(--ac2)))}
 .ia-card{position:relative;border-radius:1.25rem;transition:transform .3s cubic-bezier(.2,.8,.2,1),border-color .3s,box-shadow .3s}
-.ia-card::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .35s;background:radial-gradient(340px circle at var(--cx,50%) var(--cy,50%),rgb(var(--ac)/.11),transparent 60%)}
-.ia-card:hover::before{opacity:1}
 .ia-lift:hover{transform:translateY(-3px);border-color:rgb(var(--ac)/.35);box-shadow:0 20px 44px -18px rgb(var(--ac)/.4)}
 .ia-sub{background:rgba(0,0,0,.32);border:1px solid rgba(255,255,255,.07);transition:border-color .2s,background .2s,transform .2s}
 .ia-muted{color:rgba(244,244,245,.56)}
@@ -187,7 +188,6 @@ select.ia-input option{background:#18181b;color:#fff}
 .ia-pre{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.68rem;line-height:1.5;white-space:pre;overflow:auto;max-height:190px}
 
 /* ---------- kinowa warstwa ---------- */
-.ia-spot{position:absolute;inset:0;background:radial-gradient(560px circle at var(--mx,50%) var(--my,18%),rgb(var(--ac)/.11),transparent 62%)}
 .ia-grain{position:fixed;inset:0;pointer-events:none;z-index:2;opacity:.06;animation:ia-grain .9s steps(6) infinite;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
 .ia-vig{position:fixed;inset:0;pointer-events:none;z-index:3;background:radial-gradient(ellipse at 50% 38%,transparent 52%,rgba(0,0,0,.5) 100%)}
 @keyframes ia-grain{0%{background-position:0 0}20%{background-position:-54px 36px}40%{background-position:36px -54px}60%{background-position:-36px -18px}80%{background-position:54px 54px}100%{background-position:0 0}}
@@ -199,11 +199,15 @@ select.ia-input option{background:#18181b;color:#fff}
 @keyframes ia-splash-out{to{opacity:0;visibility:hidden;transform:scale(1.06)}}
 @keyframes ia-lbx-t{to{transform:translateY(-100%)}}
 @keyframes ia-lbx-b{to{transform:translateY(100%)}}
-@keyframes ia-track{from{letter-spacing:.9em;opacity:0;filter:blur(8px)}to{letter-spacing:.14em;opacity:1;filter:none}}
+@keyframes ia-track{from{letter-spacing:.5em;opacity:0;filter:blur(8px)}to{letter-spacing:-.03em;opacity:1;filter:none}}
 @keyframes ia-bar{from{width:0}to{width:min(320px,70vw)}}
 .ia-cine{animation:ia-cine .75s cubic-bezier(.2,.8,.2,1) both}
-.ia-big{letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.ia-big{font-family:'Space Grotesk',Inter,sans-serif;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
 .ia-hero{position:relative;overflow:hidden;border-radius:1.75rem;background:linear-gradient(135deg,rgb(var(--ac)/.17),rgba(255,255,255,.035) 46%,rgb(var(--ac2)/.11));border:1px solid rgb(var(--ac)/.3);box-shadow:0 30px 70px -34px rgb(var(--ac)/.55)}
+.ia-wm{position:absolute;right:-.5rem;bottom:-2.4rem;font-family:'Space Grotesk',Inter,sans-serif;font-weight:900;font-size:clamp(7rem,22vw,13rem);line-height:1;letter-spacing:-.05em;color:rgb(var(--ac)/.07);pointer-events:none;user-select:none;white-space:nowrap}
+.ia-tile{border-radius:1rem;padding:.7rem .85rem;background:rgba(0,0,0,.30);border:1px solid rgba(255,255,255,.08);transition:transform .25s,border-color .25s}
+.ia-tile:hover{transform:translateY(-2px);border-color:rgb(var(--ac)/.4)}
+.ia-duel.live{border-color:rgb(var(--ac)/.35);box-shadow:0 0 0 1px rgb(var(--ac)/.12),0 18px 40px -28px rgb(var(--ac)/.6)}
 .ia-hero::after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,transparent 38%,rgba(255,255,255,.085) 50%,transparent 62%);animation:ia-sheen 7s ease-in-out 1.2s infinite}
 .ia-av-ring{display:inline-flex;padding:3px;border-radius:9999px;background:conic-gradient(from 140deg,rgb(var(--ac)),rgb(var(--ac2)),rgb(var(--ac)/.25),rgb(var(--ac)));animation:ia-glow 3.2s ease-in-out infinite}
 .ia-av-ring>*{border:3px solid #09090b}
@@ -215,15 +219,12 @@ select.ia-input option{background:#18181b;color:#fff}
 .ia-tcard-in{position:relative;overflow:hidden;border-radius:calc(1.25rem - 1.5px);background:linear-gradient(170deg,#1b1b20,#0b0b0d 72%)}
 .ia-tcard-foil{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .3s;mix-blend-mode:overlay;background:radial-gradient(circle at var(--fx,50%) var(--fy,0%),rgba(255,255,255,.34),transparent 48%)}
 .ia-tcard:hover .ia-tcard-foil{opacity:1}
-.ia-ach{transition:transform .25s,border-color .25s}
-.ia-ach.off{filter:grayscale(1);opacity:.42}
-.ia-ach:not(.off):hover{transform:translateY(-2px);border-color:rgb(var(--ac)/.5)}
 .ia-splash{position:fixed;inset:0;z-index:100;background:#050506;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;pointer-events:none;animation:ia-splash-out .8s cubic-bezier(.6,0,.2,1) 1.9s forwards;overflow:hidden}
 .ia-splash::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgb(var(--ac)/.22),transparent 55%)}
 .ia-lbx{position:absolute;left:0;right:0;height:13vh;background:#000;z-index:2}
 .ia-lbx.t{top:0;animation:ia-lbx-t .9s cubic-bezier(.7,0,.2,1) 1.7s forwards}
 .ia-lbx.b{bottom:0;animation:ia-lbx-b .9s cubic-bezier(.7,0,.2,1) 1.7s forwards}
-.ia-splash-title{position:relative;font-size:clamp(2rem,9vw,4.2rem);font-weight:900;text-transform:uppercase;animation:ia-track 1.5s cubic-bezier(.2,.8,.2,1) .15s both;text-align:center;padding:0 1rem}
+.ia-splash-title{position:relative;font-family:'Space Grotesk',Inter,sans-serif;font-size:clamp(2.4rem,11vw,5rem);font-weight:700;animation:ia-track 1.5s cubic-bezier(.2,.8,.2,1) .15s both;text-align:center;padding:0 1rem}
 .ia-splash-kicker{position:relative;font-size:.7rem;font-weight:800;letter-spacing:.4em;color:rgba(244,244,245,.55);animation:ia-fade 1s ease .1s both}
 .ia-splash-bar{position:relative;height:2px;background:linear-gradient(90deg,transparent,rgb(var(--ac)),transparent);animation:ia-bar 1.3s cubic-bezier(.2,.8,.2,1) .35s both}
 .ia-splash-sub{position:relative;font-size:.78rem;font-weight:700;color:rgba(244,244,245,.5);animation:ia-fade 1s ease .9s both}
@@ -619,6 +620,10 @@ const evaluatePhysiqueAI = (player, photoIdx = 0) => {
   const photos = player.photos || [];
   const selectedPhoto = photos[photoIdx] || photos[0];
   const prevPhoto = photos[photoIdx + 1];
+  // zdjęcie, którego AI nie uznało za sylwetkę, nie wpływa na oceny
+  const trusted = (ph) => (ph && ph.aiVision && ph.aiVision.verified !== false ? ph.aiVision : null);
+  const av = trusted(selectedPhoto);
+  const avPrev = trusted(prevPhoto);
 
   const height = player.heightCm || 180;
   const waist = selectedPhoto?.waist || player.measurements?.waist?.current || 85;
@@ -633,16 +638,16 @@ const evaluatePhysiqueAI = (player, photoIdx = 0) => {
   const bioDefScore = Math.min(10, Math.max(3, ((0.55 - whtr) / (0.55 - 0.42)) * 7 + 3));
   const bioArmScore = Math.min(10, Math.max(3, ((armToWaist - 0.40) / (0.53 - 0.40)) * 7 + 3));
 
-  const vScore = selectedPhoto?.aiVision?.vScore ? Number(selectedPhoto.aiVision.vScore).toFixed(1) : bioVScore.toFixed(1);
-  const defScore = selectedPhoto?.aiVision?.defScore ? Number(selectedPhoto.aiVision.defScore).toFixed(1) : bioDefScore.toFixed(1);
-  const armScore = selectedPhoto?.aiVision?.armScore ? Number(selectedPhoto.aiVision.armScore).toFixed(1) : bioArmScore.toFixed(1);
+  const vScore = av?.vScore ? Number(av.vScore).toFixed(1) : bioVScore.toFixed(1);
+  const defScore = av?.defScore ? Number(av.defScore).toFixed(1) : bioDefScore.toFixed(1);
+  const armScore = av?.armScore ? Number(av.armScore).toFixed(1) : bioArmScore.toFixed(1);
 
-  const overall = selectedPhoto?.aiVision?.overall ? Number(selectedPhoto.aiVision.overall).toFixed(1) : (parseFloat(vScore) * 0.4 + parseFloat(defScore) * 0.35 + parseFloat(armScore) * 0.25).toFixed(1);
+  const overall = av?.overall ? Number(av.overall).toFixed(1) : (parseFloat(vScore) * 0.4 + parseFloat(defScore) * 0.35 + parseFloat(armScore) * 0.25).toFixed(1);
 
   let progressLabel = 'Zdjęcie bazowe';
   let progressTone = 'text-neutral-300';
   if (prevPhoto) {
-    const prevOverall = prevPhoto?.aiVision?.overall ? Number(prevPhoto.aiVision.overall) : parseFloat(overall);
+    const prevOverall = avPrev?.overall ? Number(avPrev.overall) : parseFloat(overall);
     const diff = (parseFloat(overall) - prevOverall).toFixed(1);
     const weightDiffNum = (selectedPhoto?.weight || player.currentWeight) - (prevPhoto?.weight || player.currentWeight);
     const weightDiff = weightDiffNum.toFixed(1);
@@ -658,7 +663,7 @@ const evaluatePhysiqueAI = (player, photoIdx = 0) => {
     }
   }
 
-  const estBf = selectedPhoto?.aiVision?.estBf || Math.round(Math.max(9, Math.min(30, (whtr - 0.335) * 140)));
+  const estBf = av?.estBf || Math.round(Math.max(9, Math.min(30, (whtr - 0.335) * 140)));
   const fallbackDetailedVerdict = `Mocne strony: Kontrola obwodu pasa (${waist} cm) przy masie ${player.currentWeight} kg | Braki do poprawy: Mała różnica między obwodem klatki a talią, brakuje szerokości najszerszego grzbietu | Plan naprawczy: Dodaj 2x w tygodniu podciąganie oraz wznosy bokiem z hantlami`;
 
   return {
@@ -671,9 +676,9 @@ const evaluatePhysiqueAI = (player, photoIdx = 0) => {
     vTaper: vTaper.toFixed(2),
     whtr: whtr.toFixed(2),
     estBf,
-    lightingNote: selectedPhoto?.aiVision?.lightingNote || 'Zweryfikowano biometrycznie',
-    summary: selectedPhoto?.aiVision?.verdict || fallbackDetailedVerdict,
-    source: selectedPhoto?.aiVision?.source || 'Sędzia Sylwetkowy AI'
+    lightingNote: av?.lightingNote || 'Zweryfikowano biometrycznie',
+    summary: av?.verdict || fallbackDetailedVerdict,
+    source: av?.source || (selectedPhoto?.aiVision?.verified === false ? 'Analizator biometryczny (zdjęcie niezweryfikowane)' : 'Sędzia Sylwetkowy AI')
   };
 };
 
@@ -692,7 +697,8 @@ const autoEvaluateUploadedPhoto = (file, playerContext, zoomFactor = 1.0) => {
           estBf: baseEval.estBf,
           lightingNote: 'Tryb awaryjny',
           verdict: baseEval.summary,
-          source: 'Analizator Biometryczny AI'
+          source: 'Analizator Biometryczny AI',
+          verified: null
         }
       });
     };
@@ -741,6 +747,8 @@ const autoEvaluateUploadedPhoto = (file, playerContext, zoomFactor = 1.0) => {
           if (res.ok) {
             const serverAI = await res.json();
             if (serverAI && serverAI.vScore) {
+              const pc = serverAI.photoCheck || null;
+              const check = pc ? { isBody: pc.isBody !== false, quality: pc.quality || '', issue: pc.issue || '', plausible: pc.plausible !== false, note: pc.plausibilityNote || '' } : null;
               const overall = (Number(serverAI.vScore) * 0.4 + Number(serverAI.defScore) * 0.35 + Number(serverAI.armScore) * 0.25).toFixed(1);
               resolve({
                 dataUrl,
@@ -752,7 +760,9 @@ const autoEvaluateUploadedPhoto = (file, playerContext, zoomFactor = 1.0) => {
                   lightingNote: serverAI.lightingNote || 'Zweryfikowano przez Gemini Vision AI',
                   verdict: serverAI.verdict,
                   overall: parseFloat(overall),
-                  source: 'Gemini Vision AI (Chmura)'
+                  source: 'Gemini Vision AI (Chmura)',
+                  verified: check ? check.isBody : null,
+                  check
                 }
               });
               return;
@@ -828,11 +838,49 @@ const fmtSigned = (v, digits = 1, unit = '') => {
 const LIFT_KEYS = ['bench', 'squat', 'deadlift', 'ohp'];
 const LIFT_NAMES = { bench: 'Wyciskanie leżąc', squat: 'Przysiad', deadlift: 'Martwy ciąg', ohp: 'OHP' };
 const rmOf = (l) => calc1RM(l?.weight, l?.reps);
-// najlepszy wynik 1RM z ostatniej serii oraz z całej historii rekordów
-const bestRM = (p, k) => Math.max(rmOf(p.lifts?.[k]), 0, ...(p.prs || []).filter((r) => r.lift === k).map((r) => r.rm || 0));
+// Rekordy przechodzą weryfikację: skok o ponad 10% względem poprzedniego wyniku wymaga potwierdzenia kogoś z ekipy,
+// a rekord, któremu większość nie wierzy, przestaje się liczyć (ranking, liga, pojedynki).
+const annotatePRs = (p) => {
+  const best = {};
+  return [...(p.prs || [])]
+    .sort((a, b) => (a.ts || 0) - (b.ts || 0))
+    .map((r) => {
+      const votes = r.votes || [];
+      const okV = votes.filter((v) => v.v === 'ok').length;
+      const susV = votes.filter((v) => v.v === 'sus').length;
+      let needs = false;
+      let status = 'ok';
+      if (!r.base) {
+        const prev = best[r.lift] || 0;
+        needs = Boolean(r.pr) && prev > 0 && r.rm > prev * 1.1 && r.rm - prev >= 5;
+        best[r.lift] = Math.max(prev, r.rm || 0);
+        if (susV > okV && susV >= (needs ? 1 : 2)) status = 'disputed';
+        else if (needs && okV === 0) status = 'pending';
+        else if (okV >= 1 && okV >= susV) status = 'verified';
+      }
+      return { ...r, needs, okV, susV, status };
+    });
+};
+const prCounts = (r) => r.status === 'ok' || r.status === 'verified';
+const bestEntry = (p, k, until = Infinity) => {
+  let top = null;
+  annotatePRs(p).forEach((r) => {
+    if (r.lift === k && prCounts(r) && (r.ts || 0) <= until && (!top || (r.rm || 0) > top.rm)) top = r;
+  });
+  return top;
+};
+const bestRM = (p, k, until = Infinity) => {
+  const e = bestEntry(p, k, until);
+  return e ? e.rm || 0 : rmOf(p.lifts?.[k]);
+};
+const bestSet = (p, k) => {
+  const e = bestEntry(p, k);
+  return e ? { weight: e.weight, reps: e.reps, rm: e.rm } : { weight: p.lifts?.[k]?.weight || 0, reps: p.lifts?.[k]?.reps || 0, rm: rmOf(p.lifts?.[k]) };
+};
+// punkt odniesienia dla progresu siły = pierwszy prawdziwy zapis (nie domyślne wartości nowego profilu)
 const baseRM = (p, k) => {
-  const list = (p.prs || []).filter((r) => r.lift === k).sort((a, b) => (a.ts || 0) - (b.ts || 0));
-  return list.length ? list[0].rm || 0 : 0;
+  const real = annotatePRs(p).filter((r) => r.lift === k && !r.base && prCounts(r));
+  return real.length ? real[0].rm || 0 : 0;
 };
 const goalDir = (goal) => {
   const g = String(goal || '').toLowerCase();
@@ -866,11 +914,11 @@ const calcStreak = (p, now = Date.now()) => {
 const weekStats = (p, since = startOfWeek(), now = Date.now()) => {
   const weigh = (p.weighIns || []).filter((w) => w.ts >= since);
   const photos = (p.photos || []).filter((ph) => ph.ts && ph.ts >= since);
-  const sets = (p.prs || []).filter((r) => !r.base && r.ts >= since);
+  const sets = annotatePRs(p).filter((r) => !r.base && r.ts >= since && r.status !== 'disputed');
   const weighDays = new Set(weigh.map((w) => dayKey(w.ts))).size;
-  const prCount = sets.filter((r) => r.pr).length;
+  const prCount = sets.filter((r) => r.pr && prCounts(r)).length;
   const all = new Set([...weigh.map((w) => dayKey(w.ts)), ...photos.map((ph) => dayKey(ph.ts)), ...sets.map((r) => dayKey(r.ts))]);
-  const bestPhotoAi = photos.reduce((m, ph) => Math.max(m, Number(ph.aiVision?.overall) || 0), 0);
+  const bestPhotoAi = photos.reduce((m, ph) => Math.max(m, ph.aiVision?.verified === false ? 0 : Number(ph.aiVision?.overall) || 0), 0);
   const pts = Math.min(weighDays, 7) * 5 + Math.min(photos.length, 2) * 20 + Math.min(prCount, 4) * 30 + Math.min(sets.length, 12) * 4 + all.size * 3;
   return { weighDays, photos: photos.length, sets: sets.length, prCount, activeDays: all.size, bestPhotoAi, streak: calcStreak(p, now), pts };
 };
@@ -903,7 +951,7 @@ const calcProgress = (p) => {
   });
   const strengthPct = baseSum ? ((curSum - baseSum) / baseSum) * 100 : 0;
   const photos = p.photos || [];
-  const aiOf = (ph) => Number(ph?.aiVision?.overall) || 0;
+  const aiOf = (ph) => (ph?.aiVision?.verified === false ? 0 : Number(ph?.aiVision?.overall) || 0);
   const aiDelta = photos.length > 1 && aiOf(photos[0]) && aiOf(photos[photos.length - 1]) ? aiOf(photos[0]) - aiOf(photos[photos.length - 1]) : 0;
   const minor = (p.age || 22) < 18; // u osób niepełnoletnich nie punktujemy samego chudnięcia
   let body;
@@ -914,54 +962,183 @@ const calcProgress = (p) => {
   return { dPct, waistDrop, armGain, strengthPct, aiDelta, pts };
 };
 
-const ACHIEVEMENTS = [
-  { id: 'first_set', icon: '🩸', title: 'Pierwsza krew', desc: 'Zapisz pierwszą serię na siłowni', test: (c) => c.setCount >= 1 },
-  { id: 'pr1', icon: '🏆', title: 'Rekordzista', desc: 'Pobij własny rekord życiowy', test: (c) => c.prCount >= 1 },
-  { id: 'pr5', icon: '💥', title: 'Maszyna do rekordów', desc: '5 pobitych rekordów', test: (c) => c.prCount >= 5 },
-  { id: 'bench100', icon: '🛡️', title: 'Klub 100', desc: 'Wyciskanie leżąc 1RM ≥ 100 kg', test: (c) => c.rm.bench >= 100 },
-  { id: 'squat140', icon: '🦵', title: 'Klub 140', desc: 'Przysiad 1RM ≥ 140 kg', test: (c) => c.rm.squat >= 140 },
-  { id: 'dead180', icon: '🏗️', title: 'Klub 180', desc: 'Martwy ciąg 1RM ≥ 180 kg', test: (c) => c.rm.deadlift >= 180 },
-  { id: 'total400', icon: '👑', title: 'Klub 400', desc: 'Suma trójboju ≥ 400 kg', test: (c) => c.total >= 400 },
-  { id: 'weigh5', icon: '⚖️', title: 'Waga nie kłamie', desc: '5 zapisanych ważeń', test: (c) => c.weighCount >= 5 },
-  { id: 'streak3', icon: '🔥', title: 'Trzy z rzędu', desc: 'Seria 3 aktywnych dni', test: (c) => c.streak >= 3 },
-  { id: 'streak7', icon: '🌋', title: 'Tydzień ognia', desc: 'Seria 7 aktywnych dni', test: (c) => c.streak >= 7 },
-  { id: 'streak30', icon: '☄️', title: 'Miesiąc żelaza', desc: 'Seria 30 aktywnych dni', test: (c) => c.streak >= 30 },
-  { id: 'photo3', icon: '📸', title: 'Kronikarz', desc: '3 zdjęcia sylwetki w archiwum', test: (c) => c.photos >= 3 },
-  { id: 'ai8', icon: '✨', title: 'Oko Sędziego', desc: 'Ocena AI na poziomie 8,0 lub wyżej', test: (c) => c.ai >= 8 },
-  { id: 'fan', icon: '🦍', title: 'Ulubieniec ekipy', desc: '10 reakcji pod Twoimi zdjęciami', test: (c) => c.reactions >= 10 },
-  { id: 'goal2', icon: '🎯', title: 'Zgodnie z planem', desc: 'Waga o 2 kg bliżej celu niż na starcie', test: (c) => c.goodKg >= 2 },
-  { id: 'avatar', icon: '🖼️', title: 'Twarz ekipy', desc: 'Ustaw własne zdjęcie profilowe', test: (c) => c.hasAvatar }
-];
+const calcOVR = ({ ai, dots, streak, duelWins, progPts }) =>
+  Math.round(Math.min(99, 38 + ai * 3.4 + (Math.min(dots, 380) / 380) * 18 + (Math.min(streak, 30) / 30) * 5 + (Math.min(duelWins, 5) / 5) * 4 + (clampN(progPts, 0, 60) / 60) * 4));
 
-const achievementsOf = (p, now = Date.now()) => {
-  const rm = {};
-  LIFT_KEYS.forEach((k) => { rm[k] = bestRM(p, k); });
-  const prs = (p.prs || []).filter((r) => !r.base);
-  const dir = goalDir(p.goal);
-  const c = {
-    setCount: prs.length,
-    prCount: prs.filter((r) => r.pr).length,
-    rm,
-    total: rm.bench + rm.squat + rm.deadlift,
-    weighCount: (p.weighIns || []).length,
-    streak: calcStreak(p, now),
-    photos: (p.photos || []).length,
-    ai: evaluatePhysiqueAI(p, 0).overall,
-    reactions: (p.photos || []).reduce((s, ph) => s + Object.values(ph.reactions || {}).reduce((a, b) => a + (Number(b) || 0), 0), 0),
-    goodKg: dir === 0 ? 0 : dir * ((p.currentWeight || 0) - (p.startWeight || p.currentWeight || 0)),
-    hasAvatar: Boolean(p.avatar)
-  };
-  return ACHIEVEMENTS.map((a) => ({ id: a.id, icon: a.icon, title: a.title, desc: a.desc, got: Boolean(a.test(c)) }));
+/* ------------------------------ Weryfikacja i pojedynki ------------------------------ */
+const PR_STATUS_TXT = { pending: ' • ⏳ czeka na potwierdzenie', verified: ' • ✓ potwierdzony', disputed: ' • ⚠️ sporny', ok: '' };
+
+const DUEL_METRICS = [
+  { id: 'loss', icon: '📉', title: 'Redukcja wagi', unit: '%', desc: 'Kto bardziej obniży wagę (w % masy ciała)' },
+  { id: 'gain', icon: '📈', title: 'Przyrost wagi', unit: '%', desc: 'Kto bardziej zwiększy wagę (w % masy ciała)' },
+  { id: 'strength', icon: '🏋️', title: 'Przyrost siły', unit: 'kg', desc: 'O ile wzrośnie suma wyciskania, przysiadu i martwego (1RM)' },
+  { id: 'prs', icon: '🏆', title: 'Rekordy', unit: 'PR', desc: 'Kto pobije więcej potwierdzonych rekordów życiowych' },
+  { id: 'active', icon: '🔥', title: 'Aktywne dni', unit: 'dni', desc: 'Kto zapisze coś w większej liczbie różnych dni' }
+];
+const duelTotal = (p, until = Infinity) => bestRM(p, 'bench', until) + bestRM(p, 'squat', until) + bestRM(p, 'deadlift', until);
+const duelBase = (p) => ({ w: p.currentWeight, total: duelTotal(p) });
+const duelEnd = (d) => d.ts + d.days * DAY_MS;
+const activeDaysBetween = (p, from, to) => {
+  const set = new Set();
+  [
+    ...(p.weighIns || []).map((w) => w.ts),
+    ...(p.photos || []).map((ph) => ph.ts),
+    ...annotatePRs(p).filter((r) => !r.base && r.status !== 'disputed').map((r) => r.ts)
+  ].forEach((ts) => { if (ts && ts >= from && ts <= to) set.add(dayKey(ts)); });
+  return set.size;
+};
+const duelScore = (d, p, now = Date.now()) => {
+  const until = Math.min(now, duelEnd(d));
+  const base = (d.base && d.base[p.id]) || { w: p.currentWeight, total: 0 };
+  if (d.metric === 'loss' || d.metric === 'gain') {
+    const ins = (p.weighIns || []).filter((w) => w.ts >= d.ts && w.ts <= until);
+    const w = ins.length ? ins[ins.length - 1].w : base.w;
+    const pct = base.w ? ((base.w - w) / base.w) * 100 : 0;
+    return Math.round((d.metric === 'loss' ? pct : -pct) * 10) / 10;
+  }
+  if (d.metric === 'strength') return duelTotal(p, until) - (base.total || 0);
+  if (d.metric === 'prs') return annotatePRs(p).filter((r) => !r.base && r.pr && prCounts(r) && r.ts >= d.ts && r.ts <= until).length;
+  return activeDaysBetween(p, d.ts, until);
+};
+const collectDuels = (players) => {
+  const m = new Map();
+  players.forEach((p) => (p.duels || []).forEach((d) => {
+    const ex = m.get(d.id);
+    m.set(d.id, ex ? { ...ex, cancelled: Boolean(ex.cancelled || d.cancelled) } : d);
+  }));
+  return Array.from(m.values()).filter((d) => !d.cancelled).sort((a, b) => b.ts - a.ts);
+};
+const duelTallies = (players, now) => {
+  const byId = Object.fromEntries(players.map((p) => [p.id, p]));
+  const tally = {};
+  const t = (id) => (tally[id] = tally[id] || { w: 0, l: 0, d: 0 });
+  collectDuels(players).forEach((d) => {
+    if (now < duelEnd(d)) return;
+    const a = byId[d.from];
+    const b = byId[d.to];
+    if (!a || !b) return;
+    const sa = duelScore(d, a, now);
+    const sb = duelScore(d, b, now);
+    if (sa > sb) { t(a.id).w += 1; t(b.id).l += 1; }
+    else if (sb > sa) { t(b.id).w += 1; t(a.id).l += 1; }
+    else { t(a.id).d += 1; t(b.id).d += 1; }
+  });
+  return tally;
 };
 
-const calcOVR = ({ ai, dots, streak, achCount, progPts }) =>
-  Math.round(Math.min(99, 38 + ai * 3.4 + (Math.min(dots, 380) / 380) * 18 + (Math.min(streak, 30) / 30) * 5 + (Math.min(achCount, 16) / 16) * 4 + (clampN(progPts, 0, 60) / 60) * 4));
+// trend wagi z ostatnich 4 tygodni (regresja liniowa po zapisanych ważeniach)
+const weightTrend = (p, now = Date.now()) => {
+  const pts = (p.weighIns || []).filter((w) => w.ts >= now - 28 * DAY_MS).map((w) => ({ x: (w.ts - now) / DAY_MS, y: Number(w.w) }));
+  if (pts.length < 3) return null;
+  const xs = pts.map((q) => q.x);
+  const span = Math.max(...xs) - Math.min(...xs);
+  if (span < 6) return null;
+  const n = pts.length;
+  const mx = pts.reduce((s, q) => s + q.x, 0) / n;
+  const my = pts.reduce((s, q) => s + q.y, 0) / n;
+  let num = 0;
+  let den = 0;
+  pts.forEach((q) => { num += (q.x - mx) * (q.y - my); den += (q.x - mx) ** 2; });
+  if (!den) return null;
+  return { kgWeek: (num / den) * 7, n, days: Math.round(span) };
+};
+
+// auto-korekta kalorii: porównanie realnego trendu wagi z tym, co obiecywał plan
+const kcalAdvice = (p, now = Date.now()) => {
+  const tr = weightTrend(p, now);
+  if (!tr) return null;
+  const tdee = p.tdee || calcCPMData(p.currentWeight, p.heightCm, p.age || 22, p.sex || 'M', p.pal || 1.55).cpm;
+  const exp = (((p.dietKcal || 0) - tdee) * 7) / 7700;
+  const bw = p.currentWeight || 80;
+  const floor = Math.max(p.bmr || 0, p.sex === 'K' ? 1200 : 1500);
+  let adj = Math.round(clampN(-(tr.kgWeek - exp) * 1100 * 0.7, -250, 250) / 50) * 50;
+  let note = '';
+  if ((p.age || 22) < 18 && adj < 0) {
+    adj = 0;
+    note = 'Poniżej 18. roku życia nie obcinamy kalorii automatycznie – omów to z trenerem lub lekarzem.';
+  }
+  const fast = tr.kgWeek < -0.01 * bw;
+  if (fast) {
+    adj = Math.max(adj, 150);
+    note = 'Waga spada szybciej niż 1% masy ciała tygodniowo – to zbyt szybko, dodajemy kalorie.';
+  }
+  let target = (p.dietKcal || 0) + adj;
+  if (target < floor && adj < 0) {
+    target = Math.max(floor, p.dietKcal || 0);
+    adj = target - (p.dietKcal || 0);
+    note = note || 'Nie schodzimy poniżej bezpiecznego minimum kalorii.';
+  }
+  return { ...tr, exp, tdee, adj, target, floor, fast, note };
+};
+
+// podsumowanie do Trenera AI (i do trybu offline)
+const buildCoachSummary = (p, now = Date.now()) => {
+  const tr = weightTrend(p, now);
+  const tdee = p.tdee || p.cpmData?.cpm || 0;
+  const lifts = {};
+  LIFT_KEYS.forEach((k) => { lifts[k] = bestRM(p, k); });
+  return {
+    name: p.name, age: p.age, sex: p.sex, heightCm: p.heightCm, goal: p.goal,
+    dietKcal: p.dietKcal, tdee: tdee || null, weight: p.currentWeight, startWeight: p.startWeight,
+    waist: p.measurements?.waist?.current,
+    trendKgWeek: tr ? Math.round(tr.kgWeek * 100) / 100 : null,
+    expectedKgWeek: tr && tdee ? Math.round((((p.dietKcal || 0) - tdee) * 7 / 7700) * 100) / 100 : null,
+    lifts1RM: lifts, total1RM: lifts.bench + lifts.squat + lifts.deadlift,
+    prsLast14d: annotatePRs(p).filter((r) => !r.base && r.pr && prCounts(r) && r.ts >= now - 14 * DAY_MS).length,
+    streak: p.streak, weekPts: p.week?.pts,
+    ai: { overall: p.ai?.overall, v: p.ai?.vScore, def: p.ai?.defScore, arm: p.ai?.armScore, estBf: p.ai?.estBf }
+  };
+};
+
+const localCoach = (s) => {
+  const f1 = (v) => String(Math.round(v * 100) / 100).replace('.', ',');
+  const dir = goalDir(s.goal);
+  const bw = s.weight || 80;
+  const picks = [];
+  let headline = 'Plan na ten tydzień';
+  let diagnosis;
+  if (s.trendKgWeek === null) {
+    diagnosis = 'Mam za mało ważeń, żeby ocenić Twój trend wagi – potrzebuję co najmniej 3 pomiarów rozłożonych na tydzień.';
+    picks.push('Waż się rano na czczo przez najbliższe 7 dni – odblokuje to korektę kalorii i punkty w lidze.');
+  } else {
+    const gap = s.trendKgWeek - (s.expectedKgWeek ?? 0);
+    diagnosis = `Twój trend wagi to ${f1(s.trendKgWeek)} kg/tydz.${s.expectedKgWeek !== null ? ` przy planowanych ${f1(s.expectedKgWeek)} kg/tydz.` : ''}`;
+    if (Math.abs(gap) < 0.15) {
+      headline = 'Idziesz zgodnie z planem';
+      picks.push('Nie zmieniaj kalorii – trzymaj plan jeszcze 2 tygodnie i patrz na średnią tygodniową.');
+    } else if (gap > 0) {
+      picks.push(dir < 0 ? 'Redukcja idzie wolniej niż plan – obetnij ok. 100–150 kcal albo dołóż 2 tys. kroków dziennie.' : dir > 0 ? 'Przybierasz szybciej niż plan – zmniejsz nadwyżkę o ok. 100–150 kcal, żeby przybywało mniej tłuszczu.' : 'Waga rośnie, a plan zakładał stabilizację – zejdź o ok. 100 kcal.');
+    } else {
+      picks.push(dir < 0 ? 'Chudniesz szybciej niż plan – jeśli siła spada, dodaj 100–150 kcal.' : dir > 0 ? 'Masa rośnie wolniej niż plan – dodaj 150–200 kcal.' : 'Waga spada, a plan zakładał stabilizację – dodaj ok. 100 kcal.');
+    }
+  }
+  const targets = { bench: 1.0, squat: 1.3, deadlift: 1.5, ohp: 0.65 };
+  let weakK = null;
+  let weakR = 9;
+  LIFT_KEYS.forEach((k) => {
+    const v = s.lifts1RM?.[k] || 0;
+    if (!v) return;
+    const r = v / bw / targets[k];
+    if (r < weakR) { weakR = r; weakK = k; }
+  });
+  if (weakK) picks.push(`Najsłabszy bój względem masy ciała: ${LIFT_NAMES[weakK]} – dołóż jedną serię roboczą tygodniowo i progresuj o 2,5 kg.`);
+  const parts = [['v', 'Szerokość pleców i barków (V-taper) odstaje – wznosy bokiem i podciąganie 2× w tygodniu.'], ['def', 'Definicja jest najsłabszym punktem – pilnuj kalorii i 8–10 tys. kroków dziennie.'], ['arm', 'Ramiona odstają – dodaj 6–8 serii na biceps i triceps tygodniowo.']];
+  const sc = { v: Number(s.ai?.v) || 10, def: Number(s.ai?.def) || 10, arm: Number(s.ai?.arm) || 10 };
+  const low = parts.sort((a, b) => sc[a[0]] - sc[b[0]])[0];
+  if (low && sc[low[0]] < 9) picks.push(low[1]);
+  if ((s.streak || 0) < 3) picks.push('Ustal 3 stałe dni treningowe i zapisuj każdą serię – seria dni daje punkty w lidze tygodnia.');
+  ['Śpij 7–9 godzin – to najtańszy „suplement” na siłę i sylwetkę.', 'Zrób zdjęcie sylwetki w tym samym świetle i miejscu co ostatnio – porównanie przed/po będzie uczciwe.'].forEach((g) => picks.push(g));
+  let watch = 'Regeneracja: min. 1–2 dni wolne od treningu w tygodniu i stały sen.';
+  if (s.trendKgWeek !== null && s.trendKgWeek < -0.01 * bw) watch = 'Uwaga: waga spada szybciej niż 1% masy ciała tygodniowo – to za szybko, zwiększ kalorie.';
+  else if ((s.age || 22) < 18 && dir < 0) watch = 'Redukcję w wieku poniżej 18 lat omów z trenerem lub lekarzem – organizm jeszcze rośnie.';
+  return { headline, diagnosis, actions: picks.slice(0, 3), watch };
+};
 
 const buildFeed = (players, limit = 14) => {
   const ev = [];
   players.forEach((p) => {
-    (p.photos || []).forEach((ph) => ph.ts && ev.push({ ts: ph.ts, kind: 'photo', who: p, text: `nowe zdjęcie sylwetki • ${ph.weight} kg${ph.aiVision?.overall ? ` • AI ${Number(ph.aiVision.overall).toFixed(1)}` : ''}` }));
-    (p.prs || []).forEach((r) => !r.base && r.ts && ev.push({ ts: r.ts, kind: r.pr ? 'pr' : 'set', who: p, text: `${r.pr ? 'NOWY REKORD' : 'seria'}: ${LIFT_NAMES[r.lift] || r.lift} ${r.weight} kg × ${r.reps} (1RM ${r.rm} kg)` }));
+    (p.photos || []).forEach((ph) => ph.ts && ev.push({ ts: ph.ts, kind: 'photo', who: p, text: `nowe zdjęcie sylwetki • ${ph.weight} kg${ph.aiVision?.overall && ph.aiVision.verified !== false ? ` • AI ${Number(ph.aiVision.overall).toFixed(1)}` : ''}${ph.aiVision?.verified === true ? ' • ✓ sylwetka potwierdzona' : ''}` }));
+    annotatePRs(p).forEach((r) => !r.base && r.ts && ev.push({ ts: r.ts, kind: r.pr ? 'pr' : 'set', who: p, text: `${r.pr ? 'NOWY REKORD' : 'seria'}: ${LIFT_NAMES[r.lift] || r.lift} ${r.weight} kg × ${r.reps} (1RM ${r.rm} kg)${r.pr ? PR_STATUS_TXT[r.status] || '' : ''}` }));
     (p.weighIns || []).forEach((w) => w.ts && ev.push({ ts: w.ts, kind: 'weigh', who: p, text: `ważenie: ${String(w.w).replace('.', ',')} kg` }));
   });
   return ev.sort((a, b) => b.ts - a.ts).slice(0, limit);
@@ -973,7 +1150,7 @@ const Splash = () => (
     <div className="ia-lbx t" />
     <div className="ia-lbx b" />
     <div className="ia-splash-kicker">CREW ARENA • 2026</div>
-    <div className="ia-splash-title">IRON <span className="ia-grad-text">ARCHIVE</span></div>
+    <div className="ia-splash-title">TREN<span className="ia-grad-text">dowaci</span></div>
     <div className="ia-splash-bar" />
     <div className="ia-splash-sub">Wygrywa ten, kto się poprawia.</div>
   </div>
@@ -1068,6 +1245,23 @@ const Podium = ({ rows, fmt }) => {
   );
 };
 
+const Sparkline = ({ data }) => {
+  if (!data || data.length < 2) return <div className="h-7 text-[10px] ia-faint flex items-end">za mało danych</div>;
+  const w = 100;
+  const h = 28;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const rng = max - min || 1;
+  const pts = data.map((v, i) => [(i / (data.length - 1)) * w, h - 3 - ((v - min) / rng) * (h - 6)]);
+  const d = pts.map((q, i) => `${i ? 'L' : 'M'}${q[0].toFixed(1)} ${q[1].toFixed(1)}`).join(' ');
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-7" preserveAspectRatio="none" aria-hidden="true">
+      <path d={`${d} L${w} ${h} L0 ${h} Z`} style={{ fill: 'rgb(var(--ac)/.16)' }} />
+      <path d={d} fill="none" style={{ stroke: 'rgb(var(--ac))' }} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+    </svg>
+  );
+};
+
 const TradingCard = ({ p, rank, mine }) => {
   const ref = useRef(null);
   const move = (e) => {
@@ -1114,7 +1308,7 @@ const TradingCard = ({ p, rank, mine }) => {
         </div>
         <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-[11px] font-bold relative">
           <span title="Seria aktywnych dni">🔥 {p.streak}</span>
-          <span title="Osiągnięcia">🏅 {p.achCount}/{ACHIEVEMENTS.length}</span>
+          <span title="Bilans pojedynków (wygrane–przegrane)">⚔️ {p.duelW}–{p.duelL}</span>
           {mine && <span className="ia-accent">TY</span>}
         </div>
       </div>
@@ -1354,8 +1548,22 @@ const mergePlayers = (a, b) => {
   const perDay = new Map();
   unionBy(a.weighIns, b.weighIns, (w) => w.ts).forEach((w) => perDay.set(dayKey(w.ts), w));
   const weighIns = Array.from(perDay.values());
-  const prs = unionBy(a.prs, b.prs, (r) => r.id);
-  return { ...base, photos, weighIns, prs, deletedPhotos: deleted, updatedAt: Math.max(a.updatedAt || 0, b.updatedAt || 0) };
+  const prMap = new Map();
+  [...(a.prs || []), ...(b.prs || [])].forEach((r) => {
+    const ex = prMap.get(r.id);
+    if (!ex) { prMap.set(r.id, r); return; }
+    const vm = new Map();
+    [...(ex.votes || []), ...(r.votes || [])].forEach((v) => { const cur = vm.get(v.by); if (!cur || (v.ts || 0) > (cur.ts || 0)) vm.set(v.by, v); });
+    prMap.set(r.id, { ...ex, votes: Array.from(vm.values()) });
+  });
+  const prs = Array.from(prMap.values()).sort((x, y) => (x.ts || 0) - (y.ts || 0));
+  const dm = new Map();
+  [...(a.duels || []), ...(b.duels || [])].forEach((d) => {
+    const ex = dm.get(d.id);
+    dm.set(d.id, ex ? { ...ex, cancelled: Boolean(ex.cancelled || d.cancelled) } : d);
+  });
+  const duels = Array.from(dm.values());
+  return { ...base, photos, weighIns, prs, duels, deletedPhotos: deleted, updatedAt: Math.max(a.updatedAt || 0, b.updatedAt || 0) };
 };
 
 async function sbRequest(cfg, path, { method = 'GET', body, prefer } = {}) {
@@ -1436,8 +1644,9 @@ export default function App() {
   const [baPlayerId, setBaPlayerId] = useState(null);
   const [weighInput, setWeighInput] = useState('');
   const [histLift, setHistLift] = useState('bench');
+  const [duelForm, setDuelForm] = useState({ to: '', metric: 'strength', days: 14 });
+  const [coach, setCoach] = useState({ id: '', loading: false, data: null, source: '', ts: 0 });
   const [nowTs, setNowTs] = useState(() => Date.now());
-  const spotRef = useRef(null);
   const [themeKey, setThemeKey] = useState(() => {
     const s = localStorage.getItem(THEME_KEY);
     return s && THEMES[s] ? s : 'volt';
@@ -1509,6 +1718,17 @@ export default function App() {
     return () => clearTimeout(t);
   }, [toast]);
 
+  // tytuł karty i ikona strzykawki
+  useEffect(() => {
+    document.title = 'TRENdowaci';
+    const hex = (THEMES[themeKey] || THEMES.volt).swatch;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#09090b"/><g transform="translate(8 8) scale(2)" fill="none" stroke="${hex}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 2 4 4"/><path d="m17 7 3-3"/><path d="M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.5 0-3.4L15 5"/><path d="m9 11 4 4"/><path d="m5 19-3 3"/><path d="m14 4 6 6"/></g></svg>`;
+    let link = document.querySelector('link[rel="icon"]');
+    if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
+    link.type = 'image/svg+xml';
+    link.href = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+  }, [themeKey]);
+
   // intro w stylu filmowym – raz na sesję
   useEffect(() => {
     if (!splash) return undefined;
@@ -1523,35 +1743,15 @@ export default function App() {
     return () => clearInterval(iv);
   }, []);
 
-  // światło podążające za kursorem + poświata na kartach pod myszką
   useEffect(() => {
-    let raf = 0;
-    let ev = null;
-    const onMove = (e) => {
-      if (e.pointerType === 'touch') return;
-      ev = e;
-      if (raf) return;
-      raf = requestAnimationFrame(() => {
-        raf = 0;
-        if (!ev) return;
-        if (spotRef.current) {
-          spotRef.current.style.setProperty('--mx', `${ev.clientX}px`);
-          spotRef.current.style.setProperty('--my', `${ev.clientY}px`);
-        }
-        const card = ev.target && ev.target.closest ? ev.target.closest('.ia-card') : null;
-        if (card) {
-          const r = card.getBoundingClientRect();
-          card.style.setProperty('--cx', `${ev.clientX - r.left}px`);
-          card.style.setProperty('--cy', `${ev.clientY - r.top}px`);
-        }
-      });
-    };
-    window.addEventListener('pointermove', onMove, { passive: true });
-    return () => {
-      window.removeEventListener('pointermove', onMove);
-      cancelAnimationFrame(raf);
-    };
-  }, []);
+    try {
+      const raw = localStorage.getItem(`ia_coach_${activeId}`);
+      const j = raw ? JSON.parse(raw) : null;
+      setCoach(j && j.data ? { id: activeId, loading: false, data: j.data, source: j.source || '', ts: j.ts || 0 } : { id: activeId, loading: false, data: null, source: '', ts: 0 });
+    } catch (_) {
+      setCoach({ id: activeId, loading: false, data: null, source: '', ts: 0 });
+    }
+  }, [activeId]);
 
   useEffect(() => { localStorage.setItem(THEME_KEY, themeKey); }, [themeKey]);
   useEffect(() => { if (activeId) localStorage.setItem('iron_archive_active_id', activeId); }, [activeId]);
@@ -1579,23 +1779,12 @@ export default function App() {
     });
   }, []);
 
-  // Zmiana jednego zawodnika + wykrycie nowych osiągnięć (konfetti i komunikat)
+  // Zmiana jednego zawodnika (+ opcjonalnie konfetti i komunikat)
   const mutatePlayer = useCallback((id, fn, { confetti: forceConfetti = false, toastMsg = '' } = {}) => {
-    const before = playersRef.current.find((p) => p.id === id);
-    if (!before) return;
-    const after = fn(before);
+    if (!playersRef.current.some((p) => p.id === id)) return;
     commit((prev) => prev.map((p) => (p.id === id ? fn(p) : p)));
-    const had = new Set(achievementsOf(before).filter((a) => a.got).map((a) => a.id));
-    const fresh = achievementsOf(after).filter((a) => a.got && !had.has(a.id));
-    if (fresh.length) {
-      setConfetti((n) => n + 1);
-      showToast(`🏅 Osiągnięcie: ${fresh.map((a) => a.title).join(', ')}`);
-    } else if (forceConfetti) {
-      setConfetti((n) => n + 1);
-      if (toastMsg) showToast(toastMsg);
-    } else if (toastMsg) {
-      showToast(toastMsg);
-    }
+    if (forceConfetti) setConfetti((n) => n + 1);
+    if (toastMsg) showToast(toastMsg);
   }, [commit, showToast]);
 
   // 2) Wysyłanie zmian do chmury – po jednym wierszu na zawodnika, ze scaleniem z tym, co jest już w chmurze
@@ -1768,7 +1957,7 @@ export default function App() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `iron-archive-baza-${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `trendowaci-baza-${new Date().toISOString().slice(0, 10)}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -1829,7 +2018,7 @@ export default function App() {
       const link = document.createElement('link');
       link.id = linkId;
       link.rel = 'stylesheet';
-      link.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap';
+      link.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap';
       document.head.appendChild(link);
     }
   }, []);
@@ -1863,6 +2052,7 @@ export default function App() {
   /* ------------------------------ Dane wyliczane ------------------------------ */
   const enrichedPlayers = useMemo(() => {
     const since = startOfWeek(nowTs);
+    const tally = duelTallies(players, nowTs);
     const base = players.map((p) => {
       const rm = {};
       LIFT_KEYS.forEach((k) => { rm[k] = bestRM(p, k); });
@@ -1871,10 +2061,9 @@ export default function App() {
       const ai = evaluatePhysiqueAI(p, 0);
       const prog = calcProgress(p);
       const week = weekStats(p, since, nowTs);
-      const achs = achievementsOf(p, nowTs);
-      const achCount = achs.filter((a) => a.got).length;
-      const ovr = calcOVR({ ai: ai.overall, dots, streak: week.streak, achCount, progPts: prog.pts });
-      return { p, rm, total1RM, dots, ai, prog, week, achs, achCount, ovr };
+      const tl = tally[p.id] || { w: 0, l: 0, d: 0 };
+      const ovr = calcOVR({ ai: ai.overall, dots, streak: week.streak, duelWins: tl.w, progPts: prog.pts });
+      return { p, rm, total1RM, dots, ai, prog, week, tl, ovr };
     });
 
     let bestAiId = null; let maxAi = -1;
@@ -1895,7 +2084,7 @@ export default function App() {
       if (week.streak > maxStreak) { maxStreak = week.streak; bestStreakId = p.id; }
     });
 
-    return base.map(({ p, rm, total1RM, dots, ai, prog, week, achs, achCount, ovr }) => {
+    return base.map(({ p, rm, total1RM, dots, ai, prog, week, tl, ovr }) => {
       const bmiData = calcBMIData(p.currentWeight, p.heightCm, p.measurements.waist.current);
       const cpmData = calcCPMData(p.currentWeight, p.heightCm, p.age || 22, p.sex || 'M', p.pal || 1.55);
       if (p.tdee) cpmData.cpm = p.tdee; // dokładne TDEE z wywiadu ma pierwszeństwo
@@ -1923,7 +2112,7 @@ export default function App() {
       return {
         ...p,
         stats: { bench1RM: rm.bench, squat1RM: rm.squat, deadlift1RM: rm.deadlift, ohp1RM: rm.ohp, total1RM, dots },
-        bmiData, cpmData, macros, ai, badges, prog, week, achs, achCount, ovr, card, streak: week.streak
+        bmiData, cpmData, macros, ai, badges, prog, week, duelW: tl.w, duelL: tl.l, duelD: tl.d, ovr, card, streak: week.streak
       };
     });
   }, [players, nowTs]);
@@ -1971,6 +2160,7 @@ export default function App() {
 
   const handleSelectPhotoFile = async (e) => {
     const file = e.target.files?.[0];
+    try { e.target.value = ''; } catch (_) {} // pozwala wybrać ten sam plik ponownie
     if (!file) return;
     setRawPhotoFile(file);
     await runPhotoAnalysis(file, photoZoom);
@@ -2002,15 +2192,19 @@ export default function App() {
     const photoUrl = bodyForm.photoPreview || createDemoPhysiquePoster(activePlayer.name, activePlayer.goal, w, waist, chest, theme.swatch);
     const localEval = evaluatePhysiqueAI(updatedPlayerTemp, 0);
 
+    // zdjęcie, którego AI nie uznało za sylwetkę, zapisujemy bez jego oceny (nie wpływa na ranking)
+    const aiRes = bodyForm.autoAiResult && bodyForm.autoAiResult.verified !== false ? bodyForm.autoAiResult : null;
     const finalAiVision = {
-      overall: bodyForm.autoAiResult?.overall || localEval.overall,
-      vScore: bodyForm.autoAiResult?.vScore || parseFloat(localEval.vScore),
-      defScore: bodyForm.autoAiResult?.defScore || parseFloat(localEval.defScore),
-      armScore: bodyForm.autoAiResult?.armScore || parseFloat(localEval.armScore),
-      estBf: bodyForm.autoAiResult?.estBf || localEval.estBf,
-      lightingNote: bodyForm.autoAiResult?.lightingNote || 'Zweryfikowano',
-      verdict: bodyForm.autoAiResult?.verdict || localEval.summary,
-      source: bodyForm.autoAiResult?.source || localEval.source
+      overall: aiRes?.overall || localEval.overall,
+      vScore: aiRes?.vScore || parseFloat(localEval.vScore),
+      defScore: aiRes?.defScore || parseFloat(localEval.defScore),
+      armScore: aiRes?.armScore || parseFloat(localEval.armScore),
+      estBf: aiRes?.estBf || localEval.estBf,
+      lightingNote: aiRes?.lightingNote || 'Zweryfikowano',
+      verdict: aiRes?.verdict || localEval.summary,
+      source: aiRes?.source || localEval.source,
+      verified: bodyForm.autoAiResult ? (bodyForm.autoAiResult.verified === undefined ? null : bodyForm.autoAiResult.verified) : null,
+      check: bodyForm.autoAiResult?.check || null
     };
 
     const todayStr = new Date().toLocaleDateString('pl-PL');
@@ -2078,6 +2272,66 @@ export default function App() {
     );
   };
 
+  const handleCreateDuel = (e) => {
+    e.preventDefault();
+    if (isLocked || !activePlayer) return;
+    const oppId = players.some((p) => p.id === duelForm.to && p.id !== activeId) ? duelForm.to : players.find((p) => p.id !== activeId)?.id;
+    const opp = players.find((p) => p.id === oppId);
+    if (!opp) { showToast('Wybierz przeciwnika.', 'warn'); return; }
+    if (duelForm.metric === 'loss' && ((activePlayer.age || 22) < 18 || (opp.age || 22) < 18)) {
+      showToast('Pojedynek na redukcję wagi jest niedostępny, gdy ktoś jest niepełnoletni.', 'warn');
+      return;
+    }
+    const now = Date.now();
+    const dup = collectDuels(players).some((d) => now < duelEnd(d) && d.metric === duelForm.metric && ((d.from === activeId && d.to === opp.id) || (d.from === opp.id && d.to === activeId)));
+    if (dup) { showToast('Taki pojedynek już trwa.', 'warn'); return; }
+    const duel = { id: `d_${now.toString(36)}`, ts: now, from: activeId, to: opp.id, metric: duelForm.metric, days: Number(duelForm.days) || 14, base: { [activeId]: duelBase(activePlayer), [opp.id]: duelBase(opp) } };
+    mutatePlayer(activeId, (p) => ({ ...p, duels: [...(p.duels || []), duel] }), { confetti: true, toastMsg: `⚔️ Wyzwanie rzucone: ${activePlayer.name} vs ${opp.name}` });
+  };
+
+  const handleCancelDuel = (d) => {
+    if (isLocked || d.from !== activeId) return;
+    mutatePlayer(activeId, (p) => ({ ...p, duels: (p.duels || []).map((x) => (x.id === d.id ? { ...x, cancelled: true } : x)) }), { toastMsg: 'Pojedynek anulowany' });
+  };
+
+  const handleVotePR = (ownerId, prId, v) => {
+    if (isLocked || !activePlayer || ownerId === activeId) return;
+    const vote = { by: activeId, v, ts: Date.now() };
+    commit(
+      (prev) => prev.map((p) => (p.id !== ownerId ? p : { ...p, prs: (p.prs || []).map((r) => (r.id !== prId ? r : { ...r, votes: [...(r.votes || []).filter((x) => x.by !== activeId), vote] })) })),
+      { social: true }
+    );
+    showToast(v === 'ok' ? '✅ Potwierdzone' : '🤨 Zgłoszone jako podejrzane');
+  };
+
+  const handleApplyKcal = () => {
+    if (isLocked || !kcalAdv) return;
+    mutatePlayer(activeId, (p) => ({ ...p, dietKcal: kcalAdv.target }), { toastMsg: `Nowy cel: ${kcalAdv.target} kcal ✓` });
+  };
+
+  const runCoach = async () => {
+    if (!currentEnriched || coach.loading) return;
+    const target = currentEnriched.id;
+    const sum = buildCoachSummary(currentEnriched, Date.now());
+    setCoach((c) => ({ ...c, id: target, loading: true }));
+    let data = null;
+    let source = 'tryb offline (reguły)';
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+    try {
+      const res = await fetch('/api/coach', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal, body: JSON.stringify({ player: sum }) });
+      if (res.ok) {
+        const j = await res.json();
+        if (j && j.headline && Array.isArray(j.actions) && j.actions.length) { data = j; source = 'Gemini AI'; }
+      }
+    } catch (_) {}
+    clearTimeout(timeoutId);
+    if (!data) data = localCoach(sum);
+    const ts = Date.now();
+    setCoach((c) => (c.id === target ? { id: target, loading: false, data, source, ts } : c));
+    try { localStorage.setItem(`ia_coach_${target}`, JSON.stringify({ data, source, ts })); } catch (_) {}
+  };
+
   const handleQuickWeigh = (e) => {
     e.preventDefault();
     if (isLocked) return;
@@ -2085,6 +2339,14 @@ export default function App() {
     if (!w || w < 30 || w > 250) {
       showToast('Podaj wagę w kilogramach (30–250).', 'warn');
       return;
+    }
+    const lastW = (activePlayer.weighIns || []).slice(-1)[0];
+    if (lastW) {
+      const gapDays = (Date.now() - lastW.ts) / DAY_MS;
+      const diff = Math.abs(w - lastW.w);
+      // dużej zmiany w kilka dni raczej nie da się „zrobić” tłuszczem – dopytujemy, czy to nie literówka
+      // eslint-disable-next-line no-alert
+      if (gapDays <= 3 && diff > Math.max(3, gapDays * 1.5) && !window.confirm(`Różnica ${diff.toFixed(1).replace('.', ',')} kg względem ostatniego ważenia. Na pewno ${String(w).replace('.', ',')} kg?`)) return;
     }
     const now = Date.now();
     const today = dayKey(now);
@@ -2209,6 +2471,8 @@ export default function App() {
     const now = Date.now();
     const cur = playersRef.current.find((p) => p.id === activeId);
     const isPR = Boolean(cur) && rm > bestRM(cur, k);
+    const realPrev = cur ? Math.max(0, ...annotatePRs(cur).filter((r) => r.lift === k && !r.base).map((r) => r.rm || 0)) : 0;
+    const needsConfirm = isPR && realPrev > 0 && rm > realPrev * 1.1 && rm - realPrev >= 5;
     mutatePlayer(
       activeId,
       (p) => {
@@ -2222,7 +2486,7 @@ export default function App() {
         const lifts = rm >= rmOf(p.lifts?.[k]) ? { ...p.lifts, [k]: { weight: w, reps: r } } : p.lifts;
         return { ...p, prs, lifts };
       },
-      { confetti: isPR, toastMsg: isPR ? `🏆 Nowy rekord: ${LIFT_NAMES[k]} ${rm} kg (1RM)!` : 'Seria zapisana – stoper ruszył ⏱️' }
+      { confetti: isPR && !needsConfirm, toastMsg: needsConfirm ? `⏳ Rekord ${rm} kg zapisany – czeka na potwierdzenie ekipy (do tego czasu nie liczy się do rankingu)` : isPR ? `🏆 Nowy rekord: ${LIFT_NAMES[k]} ${rm} kg (1RM)!` : 'Seria zapisana – stoper ruszył ⏱️' }
     );
     setPlateWeight(w);
     setTimerSec(90);
@@ -2298,17 +2562,59 @@ export default function App() {
   const maxLeague = Math.max(1, ...leagueRows.map((p) => p.week.pts));
   const podiumRows = sortedPlayers.slice(0, 3).map((p) => ({ p, v: activeSort.get(p) }));
 
-  const liftHist = (currentEnriched?.prs || [])
-    .filter((r) => r.lift === histLift)
+  const annPRs = currentEnriched ? annotatePRs(currentEnriched) : [];
+  const liftHist = annPRs
+    .filter((r) => r.lift === histLift && prCounts(r))
     .sort((a, b) => (a.ts || 0) - (b.ts || 0))
     .map((r) => ({ date: r.base ? 'Start' : shortDate(r.ts), rm: r.rm }));
-  const recentSets = [...(currentEnriched?.prs || [])].filter((r) => !r.base).sort((a, b) => b.ts - a.ts).slice(0, 8);
+  const recentSets = annPRs.filter((r) => !r.base).sort((a, b) => b.ts - a.ts).slice(0, 8);
+
+  // Arena: pojedynki
+  const enrById = Object.fromEntries(enrichedPlayers.map((p) => [p.id, p]));
+  const duelsView = collectDuels(players)
+    .map((d) => {
+      const a = enrById[d.from];
+      const b = enrById[d.to];
+      if (!a || !b) return null;
+      const live = nowTs < duelEnd(d);
+      const sa = duelScore(d, a, nowTs);
+      const sb = duelScore(d, b, nowTs);
+      return { d, a, b, sa, sb, live, left: duelEnd(d) - nowTs, winner: !live ? (sa > sb ? a : sb > sa ? b : null) : null, m: DUEL_METRICS.find((x) => x.id === d.metric) || DUEL_METRICS[0] };
+    })
+    .filter(Boolean);
+  const liveDuels = duelsView.filter((x) => x.live);
+  const doneDuels = duelsView.filter((x) => !x.live).slice(0, 4);
+  const fmtDuel = (m, v) => `${m.id === 'loss' || m.id === 'gain' ? fmtSigned(v, 1, '%') : `${String(v).replace('.', ',')} ${m.unit}`}`;
+  const duelOppId = players.some((p) => p.id === duelForm.to && p.id !== activeId) ? duelForm.to : players.find((p) => p.id !== activeId)?.id || '';
+  const duelMetricInfo = DUEL_METRICS.find((m) => m.id === duelForm.metric) || DUEL_METRICS[0];
+
+  // Arena: weryfikacja rekordów
+  const verifyList = enrichedPlayers
+    .flatMap((p) => annotatePRs(p).filter((r) => !r.base && r.pr && r.status !== 'ok' && r.ts >= nowTs - 14 * DAY_MS).map((r) => ({ ...r, owner: p })))
+    .sort((a, b) => b.ts - a.ts)
+    .slice(0, 6);
+  const coachOn = coach.id === activeId ? coach : null;
+
+  // Kalorie: korekta z trendu wagi
+  const kcalAdv = currentEnriched ? kcalAdvice(currentEnriched, nowTs) : null;
+
+  // Hero: kafelki
+  const heroWeights = (currentEnriched?.weighIns || []).slice(-14).map((w) => Number(w.w));
+  const leagueRank = currentEnriched ? leagueRows.findIndex((p) => p.id === currentEnriched.id) + 1 : 0;
+  const heroTiles = currentEnriched
+    ? [
+        { k: 'Waga', icon: '⚖️', v: `${String(currentEnriched.currentWeight).replace('.', ',')} kg`, sub: `${fmtSigned(currentEnriched.currentWeight - currentEnriched.startWeight, 1, ' kg')} od startu`, spark: heroWeights },
+        { k: 'Trójbój', icon: '🏋️', v: `${currentEnriched.stats.total1RM} kg`, sub: `DOTS ${currentEnriched.stats.dots}` },
+        { k: 'Liga', icon: '⚡', v: `${currentEnriched.week.pts} pkt`, sub: `miejsce #${leagueRank} • tydzień ${weekNo}` },
+        { k: 'Pojedynki', icon: '⚔️', v: `${currentEnriched.duelW}–${currentEnriched.duelL}`, sub: `${liveDuels.filter((x) => x.a.id === currentEnriched.id || x.b.id === currentEnriched.id).length} w toku` }
+      ]
+    : [];
 
   /* ==================================== UI ==================================== */
   return (
     <div className="ia-root" style={rootStyle}>
       <style>{STYLES}</style>
-      <div className="ia-aurora"><div ref={spotRef} className="ia-spot" /><div className="ia-grid" /><div className="ia-blob a" /><div className="ia-blob b" /><div className="ia-blob c" /></div>
+      <div className="ia-aurora"><div className="ia-grid" /><div className="ia-blob a" /><div className="ia-blob b" /><div className="ia-blob c" /></div>
       <div className="ia-grain" />
       <div className="ia-vig" />
       {splash && <Splash />}
@@ -2416,10 +2722,10 @@ export default function App() {
         <header className="ia-header sticky top-0 z-30">
           <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-2xl ia-grad flex items-center justify-center shadow-lg shrink-0"><Icon name="cpu" className="w-5 h-5" /></div>
+              <div className="w-10 h-10 rounded-2xl ia-grad flex items-center justify-center shadow-lg shrink-0"><Icon name="syringe" className="w-5 h-5" /></div>
               <div className="min-w-0">
-                <h1 className="text-base sm:text-lg font-black tracking-tight uppercase leading-none">IRON <span className="ia-grad-text">ARCHIVE</span></h1>
-                <p className="text-[11px] ia-muted hidden sm:block mt-1">Sylwetki • AI • Siła • Kalorie</p>
+                <h1 className="ia-big text-lg sm:text-xl font-black leading-none">TREN<span className="ia-grad-text">dowaci</span></h1>
+                <p className="text-[11px] ia-muted hidden sm:block mt-1">Ekipa • Sylwetki • Siła • Rywalizacja</p>
               </div>
             </div>
 
@@ -2499,6 +2805,7 @@ export default function App() {
           {/* ------------------------------ HERO ------------------------------ */}
           {currentEnriched && (
             <section className="ia-hero ia-cine p-5 sm:p-7" data-testid="hero">
+              <div className="ia-wm" aria-hidden="true">TREN</div>
               <div className="relative z-10 flex flex-col sm:flex-row sm:items-center gap-5">
                 <div className="relative shrink-0 self-start">
                   <div className="ia-av-ring"><Avatar name={currentEnriched.name} src={currentEnriched.avatar} size={104} /></div>
@@ -2515,7 +2822,7 @@ export default function App() {
                   <div className="flex flex-wrap items-center gap-2 mt-3 text-[11px] font-bold">
                     <span className="px-2.5 py-1 rounded-full bg-white/8 border border-white/10">🔥 seria {currentEnriched.streak} {currentEnriched.streak === 1 ? 'dzień' : 'dni'}</span>
                     <span className="px-2.5 py-1 rounded-full bg-white/8 border border-white/10">⚡ {currentEnriched.week.pts} pkt w tygodniu</span>
-                    <span className="px-2.5 py-1 rounded-full bg-white/8 border border-white/10">🏅 {currentEnriched.achCount}/{ACHIEVEMENTS.length}</span>
+                    <span className="px-2.5 py-1 rounded-full bg-white/8 border border-white/10">⚔️ pojedynki {currentEnriched.duelW}–{currentEnriched.duelL}</span>
                     <span className="px-2.5 py-1 rounded-full bg-white/8 border border-white/10">📈 progres {fmtSigned(currentEnriched.prog.pts, 1)}</span>
                     {currentEnriched.avatar && !isLocked && (
                       <button type="button" onClick={handleRemoveAvatar} className="text-[11px] ia-faint hover:text-white underline underline-offset-2">usuń zdjęcie profilowe</button>
@@ -2526,6 +2833,16 @@ export default function App() {
                   <div className="ia-big text-6xl sm:text-7xl font-black leading-none ia-grad-text"><CountUp value={currentEnriched.ovr} /></div>
                   <div className="text-[10px] font-black tracking-[.3em] ia-muted sm:mt-1.5">OVR</div>
                 </div>
+              </div>
+              <div className="relative z-10 mt-5 grid grid-cols-2 lg:grid-cols-4 gap-2.5" data-testid="hero-tiles">
+                {heroTiles.map((t) => (
+                  <div key={t.k} className="ia-tile">
+                    <div className="text-[10px] font-black tracking-wider ia-muted uppercase">{t.icon} {t.k}</div>
+                    <div className="ia-big text-xl font-black tabular-nums mt-0.5">{t.v}</div>
+                    <div className="text-[10px] ia-faint">{t.sub}</div>
+                    {t.spark && <div className="mt-1"><Sparkline data={t.spark} /></div>}
+                  </div>
+                ))}
               </div>
               {!isLocked ? (
                 <form onSubmit={handleQuickWeigh} className="relative z-10 mt-5 pt-4 border-t border-white/10 flex flex-wrap items-center gap-2 text-xs">
@@ -2615,7 +2932,7 @@ export default function App() {
           {activeTab === 'ai_physique' && currentEnriched && (
             <div key="t1" className="grid grid-cols-1 lg:grid-cols-12 gap-5 ia-cine">
               <div className="lg:col-span-4 ia-glass ia-card p-5 h-fit">
-                <h3 className="text-sm font-black uppercase tracking-tight mb-1 flex items-center gap-2">
+                <h3 className="text-sm font-black uppercase tracking-tight mb-1 flex items-center gap-2 ia-h">
                   <Icon name="camera" className="w-4 h-4 ia-accent" /> Dodaj zdjęcie ({currentEnriched.name})
                 </h3>
                 <p className="text-xs ia-muted mb-4">Wgraj zdjęcie z szatni – Sędzia AI oceni sylwetkę i wskaże braki.</p>
@@ -2657,6 +2974,28 @@ export default function App() {
                       )}
                     </label>
 
+                    {bodyForm.autoAiResult && bodyForm.autoAiResult.verified === false && (
+                      <div className="p-3 rounded-2xl border border-rose-500/50 bg-rose-500/10 text-rose-200 text-[11.5px] flex gap-2 ia-pop" data-testid="photo-reject">
+                        <Icon name="alert" className="w-4 h-4 shrink-0 mt-0.5" />
+                        <div><strong>AI nie rozpoznało sylwetki.</strong> {bodyForm.autoAiResult.check?.issue || 'To zdjęcie nie wygląda jak ujęcie sylwetki.'} Możesz je zapisać, ale bez oceny AI i bez wpływu na ranking – lepiej wgraj inne.</div>
+                      </div>
+                    )}
+                    {bodyForm.autoAiResult && bodyForm.autoAiResult.verified === true && (
+                      <div className="p-3 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-200 text-[11.5px] flex gap-2 ia-pop" data-testid="photo-ok">
+                        <Icon name="check" className="w-4 h-4 shrink-0 mt-0.5" />
+                        <div><strong>AI potwierdziło sylwetkę.</strong>{bodyForm.autoAiResult.check?.quality === 'slaba' ? ` Jakość słaba: ${bodyForm.autoAiResult.check.issue || 'spróbuj lepszego światła'}.` : ' Zdjęcie liczy się do rankingu.'}</div>
+                      </div>
+                    )}
+                    {bodyForm.autoAiResult && bodyForm.autoAiResult.check && bodyForm.autoAiResult.check.plausible === false && (
+                      <div className="p-3 rounded-2xl border border-amber-400/40 bg-amber-400/10 text-amber-200 text-[11.5px] flex gap-2 ia-pop" data-testid="photo-plausible">
+                        <Icon name="alert" className="w-4 h-4 shrink-0 mt-0.5" />
+                        <div><strong>Wymiary nie pasują do zdjęcia.</strong> {bodyForm.autoAiResult.check.note || 'Sprawdź wpisaną wagę i obwody.'}</div>
+                      </div>
+                    )}
+                    {bodyForm.autoAiResult && bodyForm.autoAiResult.verified === null && (
+                      <div className="text-[11px] ia-faint">AI w chmurze nie odpowiedziało – ocena powstała z pomiarów, a zdjęcie nie zostało zweryfikowane.</div>
+                    )}
+
                     {bodyForm.autoAiResult && (
                       <div className="ia-soft rounded-2xl p-4 space-y-3 ia-pop">
                         <div className="flex items-center gap-3">
@@ -2677,13 +3016,13 @@ export default function App() {
                       <div><label className="ia-label">Klatka (cm)</label><input type="number" step="0.5" placeholder={currentEnriched.measurements.chest.current} value={bodyForm.chest} onChange={(e) => setBodyForm({ ...bodyForm, chest: e.target.value })} className="ia-input" /></div>
                     </div>
                     <div><label className="ia-label">Komentarz</label><input type="text" placeholder="np. rano na czczo" value={bodyForm.note} onChange={(e) => setBodyForm({ ...bodyForm, note: e.target.value })} className="ia-input" /></div>
-                    <button type="submit" className="ia-btn ia-accent-bg w-full !py-3 text-sm"><Icon name="check" className="w-4 h-4" /> Zapisz zdjęcie w bazie</button>
+                    <button type="submit" className="ia-btn ia-accent-bg w-full !py-3 text-sm"><Icon name="check" className="w-4 h-4" /> {bodyForm.autoAiResult?.verified === false ? 'Zapisz bez oceny AI' : 'Zapisz zdjęcie w bazie'}</button>
                   </form>
                 )}
               </div>
 
               <div className="lg:col-span-8 space-y-4">
-                <h3 className="text-sm font-black uppercase tracking-tight">Tablica sylwetek ekipy <span className="ia-muted">({enrichedPlayers.length})</span></h3>
+                <h3 className="text-sm font-black uppercase tracking-tight ia-h">Tablica sylwetek ekipy <span className="ia-muted">({enrichedPlayers.length})</span></h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   {enrichedPlayers.map((p, cardIdx) => {
                     const totalPhotos = (p.photos || []).length;
@@ -2764,7 +3103,7 @@ export default function App() {
                           </div>
 
                           <div className="rounded-2xl ia-sub p-3.5 space-y-2">
-                            <div className="text-[10px] font-black uppercase tracking-wide ia-accent">Analiza i braki • {photoEval.source}</div>
+                            <div className="text-[10px] font-black uppercase tracking-wide ia-accent flex flex-wrap items-center gap-x-2">Analiza i braki • {photoEval.source}{displayedPhoto?.aiVision?.verified === true && <span className="text-emerald-300">✓ sylwetka potwierdzona</span>}{displayedPhoto?.aiVision?.verified === false && <span className="text-rose-300">⚠️ niezweryfikowane</span>}</div>
                             <VerdictList verdict={verdict} />
                           </div>
 
@@ -2852,7 +3191,7 @@ export default function App() {
 
               <div className="ia-glass ia-card p-5 space-y-4 ia-up" style={{ animationDelay: '120ms' }} data-testid="standings">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h2 className="text-base font-black uppercase tracking-tight">Klasyfikacja ekipy</h2>
+                  <h2 className="text-base font-black uppercase tracking-tight ia-h">Klasyfikacja ekipy</h2>
                   <div className="ia-seg text-xs overflow-x-auto ia-scroll max-w-full">
                     {SORTS.map((s) => (
                       <button key={s.id} onClick={() => setSortBy(s.id)} className={sortBy === s.id ? 'on' : ''}>{s.label}</button>
@@ -2897,7 +3236,7 @@ export default function App() {
               </div>
 
               <div className="space-y-3 ia-up" style={{ animationDelay: '160ms' }}>
-                <h3 className="text-sm font-black uppercase tracking-tight">Karty zawodników <span className="ia-muted">• najedź kursorem</span></h3>
+                <h3 className="text-sm font-black uppercase tracking-tight ia-h">Karty zawodników <span className="ia-muted">• najedź kursorem</span></h3>
                 <div className="flex gap-4 overflow-x-auto ia-scroll pb-3 pt-1 px-1 -mx-1">
                   {[...enrichedPlayers].sort((a, b) => b.ovr - a.ovr).map((p) => (
                     <TradingCard key={p.id} p={p} rank={ovrRank[p.id]} mine={p.id === activeId} />
@@ -2906,23 +3245,82 @@ export default function App() {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-                <div className="lg:col-span-3 ia-glass ia-card p-5 ia-up" data-testid="achievements">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-black uppercase tracking-tight">Osiągnięcia — {currentEnriched?.name}</h3>
-                    <span className="ia-accent font-black text-sm tabular-nums">{currentEnriched?.achCount}/{ACHIEVEMENTS.length}</span>
+                <div className="lg:col-span-3 ia-glass ia-card p-5 space-y-4 ia-up" data-testid="duels">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="text-sm font-black uppercase tracking-tight ia-h">Pojedynki ekipy ⚔️</h3>
+                    <span className="text-[11px] ia-muted font-bold">{liveDuels.length} w toku{currentEnriched ? ` • Twój bilans ${currentEnriched.duelW}–${currentEnriched.duelL}–${currentEnriched.duelD}` : ''}</span>
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                    {(currentEnriched?.achs || []).map((a) => (
-                      <div key={a.id} title={a.desc} className={`ia-ach ia-sub rounded-2xl p-3 ${a.got ? '' : 'off'}`} data-got={a.got ? '1' : '0'}>
-                        <div className="text-2xl">{a.icon}</div>
-                        <div className="font-black text-xs mt-1.5">{a.title}</div>
-                        <div className="text-[10.5px] ia-muted mt-0.5 leading-snug">{a.desc}</div>
+                  {enrichedPlayers.length < 2 ? (
+                    <p className="text-xs ia-muted leading-relaxed">Dodaj znajomego do ekipy, żeby rzucać mu wyzwania.</p>
+                  ) : isLocked ? (
+                    <p className="text-xs ia-muted leading-relaxed">Wybierz swoje imię u góry, aby rzucić wyzwanie.</p>
+                  ) : (
+                    <form onSubmit={handleCreateDuel} className="ia-sub rounded-2xl p-3.5 space-y-3" data-testid="duel-form">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="ia-label">Przeciwnik</label>
+                          <select value={duelOppId} onChange={(e) => setDuelForm({ ...duelForm, to: e.target.value })} className="ia-input" data-testid="duel-opp">
+                            {players.filter((p) => p.id !== activeId).map((p) => (<option key={p.id} value={p.id}>{p.name}</option>))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="ia-label">Czas trwania</label>
+                          <div className="ia-seg">
+                            {[7, 14, 30].map((n) => (<button key={n} type="button" className={duelForm.days === n ? 'on' : ''} onClick={() => setDuelForm({ ...duelForm, days: n })} data-testid={`duel-days-${n}`}>{n} dni</button>))}
+                          </div>
+                        </div>
                       </div>
-                    ))}
+                      <div className="flex flex-wrap gap-1.5">
+                        {DUEL_METRICS.map((m) => (
+                          <button key={m.id} type="button" onClick={() => setDuelForm({ ...duelForm, metric: m.id })} data-testid={`duel-metric-${m.id}`} className={`px-2.5 py-1.5 rounded-full text-[11px] font-bold border transition-colors ${duelForm.metric === m.id ? 'ia-soft' : 'bg-white/5 border-white/10 ia-muted hover:text-white'}`}>{m.icon} {m.title}</button>
+                        ))}
+                      </div>
+                      <p className="text-[11px] ia-muted">{duelMetricInfo.desc}. Start liczymy od teraz, wynik nie może być „dopisany” wstecz.</p>
+                      <button type="submit" className="ia-btn ia-accent-bg w-full" data-testid="duel-create">Rzuć wyzwanie</button>
+                    </form>
+                  )}
+                  {liveDuels.length === 0 && doneDuels.length === 0 && <p className="text-xs ia-muted leading-relaxed">Brak pojedynków. Wybierz konkurencję i rzuć rękawicę – wynik policzy się sam z ważeń, serii i zdjęć.</p>}
+                  <div className="space-y-2.5">
+                    {[...liveDuels, ...doneDuels].map(({ d, a, b, sa, sb, live, left, winner, m }) => {
+                      const wa = Math.max(sa, 0);
+                      const wb = Math.max(sb, 0);
+                      const pct = wa + wb > 0 ? (wa / (wa + wb)) * 100 : 50;
+                      return (
+                        <div key={d.id} className={`ia-duel ia-sub rounded-2xl p-3.5 space-y-2.5 ia-fade ${live ? 'live' : ''}`} data-testid="duel-row">
+                          <div className="flex flex-wrap items-center justify-between gap-1 text-[11px]">
+                            <span className="font-black">{m.icon} {m.title} • {d.days} dni</span>
+                            <span className={live ? 'ia-accent font-bold' : 'ia-muted font-bold'}>
+                              {live ? `zostało ${Math.floor(left / DAY_MS)} d ${Math.floor((left % DAY_MS) / 3600000)} h` : winner ? `🏁 wygrywa ${winner.name}` : '🏁 remis'}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Avatar name={a.name} src={a.avatar} size={30} />
+                              <div className="min-w-0">
+                                <div className="font-black text-xs truncate">{a.name}</div>
+                                <div className={`ia-big text-base font-black tabular-nums ${sa > sb ? 'ia-accent' : ''}`}>{fmtDuel(m, sa)}</div>
+                              </div>
+                            </div>
+                            <span className="font-black ia-grad-text">VS</span>
+                            <div className="flex items-center gap-2 min-w-0 justify-end text-right">
+                              <div className="min-w-0">
+                                <div className="font-black text-xs truncate">{b.name}</div>
+                                <div className={`ia-big text-base font-black tabular-nums ${sb > sa ? 'ia-accent' : ''}`}>{fmtDuel(m, sb)}</div>
+                              </div>
+                              <Avatar name={b.name} src={b.avatar} size={30} />
+                            </div>
+                          </div>
+                          <div className="h-1.5 rounded-full bg-white/10 overflow-hidden"><div className="h-full ia-grad rounded-full" style={{ width: `${pct}%`, transition: 'width 1s cubic-bezier(.2,.8,.2,1)' }} /></div>
+                          {live && d.from === activeId && !isLocked && (
+                            <button type="button" onClick={() => handleCancelDuel(d)} className="text-[11px] ia-faint hover:text-white underline underline-offset-2" data-testid="duel-cancel">anuluj pojedynek</button>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
                 <div className="lg:col-span-2 ia-glass ia-card p-5 ia-up" data-testid="feed">
-                  <h3 className="text-sm font-black uppercase tracking-tight mb-4">Co się dzieje na arenie</h3>
+                  <h3 className="text-sm font-black uppercase tracking-tight mb-4 ia-h">Co się dzieje na arenie</h3>
                   {feed.length === 0 ? (
                     <p className="text-xs ia-muted leading-relaxed">Na razie cisza. Zapisz ważenie, serię na siłowni albo zdjęcie – każdy wpis pojawi się tutaj u całej ekipy.</p>
                   ) : (
@@ -2942,9 +3340,75 @@ export default function App() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+                <div className="lg:col-span-3 ia-glass ia-card p-5 space-y-4 ia-up" data-testid="coach">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h3 className="text-sm font-black uppercase tracking-tight ia-h flex items-center gap-2"><Icon name="sparkles" className="w-4 h-4 ia-accent" /> Trener AI — {currentEnriched?.name}</h3>
+                    <button type="button" onClick={runCoach} disabled={Boolean(coachOn?.loading)} className="ia-btn ia-accent-bg" data-testid="coach-run">
+                      {coachOn?.loading ? 'Analizuję…' : coachOn?.data ? 'Odśwież analizę' : 'Analizuj tydzień'}
+                    </button>
+                  </div>
+                  {coachOn?.loading && (
+                    <div className="space-y-2 animate-pulse" data-testid="coach-loading">
+                      <div className="h-4 rounded bg-white/10 w-2/3" /><div className="h-3 rounded bg-white/10 w-full" /><div className="h-3 rounded bg-white/10 w-5/6" /><div className="h-3 rounded bg-white/10 w-3/4" />
+                    </div>
+                  )}
+                  {!coachOn?.loading && !coachOn?.data && (
+                    <p className="text-xs ia-muted leading-relaxed">Trener bierze Twój trend wagi, rekordy, serię dni i ocenę sylwetki, a potem podaje 3 konkretne kroki na ten tydzień. Działa też bez internetu – wtedy na podstawie reguł.</p>
+                  )}
+                  {!coachOn?.loading && coachOn?.data && (
+                    <div className="space-y-3 ia-fade" data-testid="coach-result">
+                      <div className="ia-big text-lg font-black">{coachOn.data.headline}</div>
+                      <p className="text-xs ia-muted leading-relaxed">{coachOn.data.diagnosis}</p>
+                      <ol className="space-y-2">
+                        {coachOn.data.actions.map((a, i) => (
+                          <li key={i} className="ia-sub rounded-xl px-3 py-2.5 text-xs flex gap-2.5 leading-snug"><span className="ia-accent font-black">{i + 1}.</span><span>{a}</span></li>
+                        ))}
+                      </ol>
+                      {coachOn.data.watch && <div className="p-3 rounded-xl border border-amber-400/40 bg-amber-400/10 text-amber-200 text-[11.5px]">👀 {coachOn.data.watch}</div>}
+                      <div className="text-[10px] ia-faint">Źródło: {coachOn.source} • {timeAgo(coachOn.ts, nowTs)}</div>
+                    </div>
+                  )}
+                </div>
+                <div className="lg:col-span-2 ia-glass ia-card p-5 space-y-3 ia-up" data-testid="verify">
+                  <h3 className="text-sm font-black uppercase tracking-tight ia-h">Weryfikacja rekordów ✅</h3>
+                  <p className="text-[11px] ia-muted leading-relaxed">Skok rekordu o ponad 10% liczy się do rankingu dopiero po potwierdzeniu przez kogoś z ekipy. Sporny rekord przestaje się liczyć.</p>
+                  {verifyList.length === 0 && <p className="text-xs ia-faint">Nic do sprawdzenia.</p>}
+                  <div className="space-y-2">
+                    {verifyList.map((r) => {
+                      const mine = (r.votes || []).find((v) => v.by === activeId);
+                      const own = r.owner.id === activeId;
+                      return (
+                        <div key={r.id} className="ia-sub rounded-xl p-3 text-xs space-y-2" data-testid="verify-row" data-status={r.status}>
+                          <div className="flex items-center gap-2">
+                            <Avatar name={r.owner.name} src={r.owner.avatar} size={24} />
+                            <div className="min-w-0 flex-1">
+                              <div className="font-black truncate">{r.owner.name} • {LIFT_NAMES[r.lift] || r.lift}</div>
+                              <div className="text-[10px] ia-faint">{r.weight} kg × {r.reps} (1RM {r.rm} kg) • {timeAgo(r.ts, nowTs)}</div>
+                            </div>
+                            <span className={`text-[10px] font-black shrink-0 ${r.status === 'verified' ? 'text-emerald-300' : r.status === 'disputed' ? 'text-rose-300' : 'text-amber-300'}`}>{r.status === 'verified' ? '✓ potwierdzony' : r.status === 'disputed' ? '⚠️ sporny' : '⏳ czeka'}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {!own && !isLocked && !mine && (
+                              <>
+                                <button type="button" onClick={() => handleVotePR(r.owner.id, r.id, 'ok')} className="ia-btn ia-soft !py-1.5 flex-1" data-testid="vote-ok">✅ Wierzę</button>
+                                <button type="button" onClick={() => handleVotePR(r.owner.id, r.id, 'sus')} className="ia-btn ia-ghost !py-1.5 flex-1" data-testid="vote-sus">🤨 Podejrzane</button>
+                              </>
+                            )}
+                            {mine && <span className="text-[10px] ia-faint">Twój głos: {mine.v === 'ok' ? '✅ wierzę' : '🤨 podejrzane'}</span>}
+                            {own && <span className="text-[10px] ia-faint">Potwierdzić musi ktoś inny ({r.okV} ✅ / {r.susV} 🤨)</span>}
+                            {!own && !mine && isLocked && <span className="text-[10px] ia-faint">Wybierz swoje imię, aby głosować</span>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
               {enrichedPlayers.length > 1 && duelA && duelB && (
                 <div className="ia-glass ia-card p-5 space-y-5 ia-up" style={{ animationDelay: '120ms' }}>
-                  <h2 className="text-base font-black uppercase tracking-tight">Pojedynek 1v1 ⚔️</h2>
+                  <h2 className="text-base font-black uppercase tracking-tight ia-h">Pojedynek 1v1 ⚔️</h2>
                   <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
                     <div className="flex items-center gap-2"><Avatar name={duelA.name} src={duelA.avatar} size={34} />
                       <select value={duelA.id} onChange={(e) => setCompA(e.target.value)} className="ia-input">{enrichedPlayers.map((p) => (<option key={p.id} value={p.id}>{p.name}</option>))}</select>
@@ -2968,11 +3432,30 @@ export default function App() {
 
           {/* ================== ZAKŁADKA 3: WYWIAD KALORYCZNY ================== */}
           {activeTab === 'cpm' && currentEnriched && (
-            <div key="t3" className="max-w-3xl mx-auto ia-cine">
+            <div key="t3" className="max-w-3xl mx-auto ia-cine space-y-5">
+              <div className="ia-glass ia-card p-5 space-y-3 ia-up" data-testid="kcal-advice">
+                <div className="flex items-center gap-2"><Icon name="sparkles" className="w-4 h-4 ia-accent" /><h3 className="text-sm font-black uppercase tracking-tight ia-h">Korekta kalorii z trendu wagi</h3></div>
+                {kcalAdv ? (
+                  <>
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div className="ia-tile"><div className="text-[10px] ia-muted font-bold uppercase">Twój trend</div><div className="ia-big text-base font-black tabular-nums">{fmtSigned(kcalAdv.kgWeek, 2)}</div><div className="text-[10px] ia-faint">kg / tydz.</div></div>
+                      <div className="ia-tile"><div className="text-[10px] ia-muted font-bold uppercase">Plan zakładał</div><div className="ia-big text-base font-black tabular-nums">{fmtSigned(kcalAdv.exp, 2)}</div><div className="text-[10px] ia-faint">kg / tydz.</div></div>
+                      <div className="ia-tile"><div className="text-[10px] ia-muted font-bold uppercase">Propozycja</div><div className="ia-big text-base font-black tabular-nums ia-accent">{kcalAdv.target}</div><div className="text-[10px] ia-faint">kcal / dzień</div></div>
+                    </div>
+                    <p className="text-xs ia-muted leading-relaxed" data-testid="kcal-advice-text">
+                      {kcalAdv.adj === 0 ? 'Plan działa zgodnie z założeniami – nie zmieniaj kalorii.' : `Waga zmienia się inaczej, niż zakładał plan – proponujemy ${fmtSigned(kcalAdv.adj, 0, ' kcal')} dziennie.`} Podstawa: {kcalAdv.n} ważeń z {kcalAdv.days} dni.
+                    </p>
+                    {kcalAdv.note && <div className="p-3 rounded-xl border border-amber-400/40 bg-amber-400/10 text-amber-200 text-[11.5px]">{kcalAdv.note}</div>}
+                    {kcalAdv.adj !== 0 && !isLocked && <button type="button" onClick={handleApplyKcal} className="ia-btn ia-accent-bg w-full" data-testid="kcal-apply">Zastosuj {kcalAdv.target} kcal</button>}
+                  </>
+                ) : (
+                  <p className="text-xs ia-muted leading-relaxed" data-testid="kcal-advice-empty">Za mało danych. Waż się co najmniej 3 razy w ciągu tygodnia (najlepiej rano na czczo), a AI porówna Twój realny trend z planem i podpowie, czy zmienić kalorie.</p>
+                )}
+              </div>
               <div className="ia-glass ia-card p-5 sm:p-6 space-y-6">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h3 className="text-base font-black uppercase tracking-tight flex items-center gap-2"><Icon name="activity" className="w-4 h-4 ia-accent" /> Wywiad kaloryczny</h3>
+                    <h3 className="text-base font-black uppercase tracking-tight flex items-center gap-2 ia-h"><Icon name="activity" className="w-4 h-4 ia-accent" /> Wywiad kaloryczny</h3>
                     <p className="text-xs ia-muted mt-1">Odpowiedz na kilka pytań – policzymy zapotrzebowanie z osobna dla pracy, kroków i treningu, a nie jednym mnożnikiem. Profil: <strong className="text-white">{currentEnriched.name}</strong>.</p>
                   </div>
                   {wizCalc.valid && (
@@ -3179,7 +3662,7 @@ export default function App() {
             <div key="t4" className="grid grid-cols-1 lg:grid-cols-3 gap-5 ia-cine">
               <div className="space-y-5">
                 <div className="ia-glass ia-card p-5">
-                  <h3 className="text-sm font-black uppercase tracking-tight mb-3">Zapisz rekord / serię ({currentEnriched.name})</h3>
+                  <h3 className="text-sm font-black uppercase tracking-tight mb-3 ia-h">Zapisz rekord / serię ({currentEnriched.name})</h3>
                   <form onSubmit={handleSaveLift} className="space-y-3 text-xs">
                     <select value={liftForm.exercise} onChange={(e) => setLiftForm({ ...liftForm, exercise: e.target.value })} className="ia-input">
                       <option value="bench">Wyciskanie leżąc (Bench Press)</option>
@@ -3212,10 +3695,10 @@ export default function App() {
               </div>
 
               <div className="lg:col-span-2 ia-glass ia-card p-5">
-                <h3 className="text-sm font-black uppercase tracking-tight mb-4">Rekordy siłowe ekipy (1RM)</h3>
+                <h3 className="text-sm font-black uppercase tracking-tight mb-4 ia-h">Rekordy siłowe ekipy (1RM)</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[{ key: 'bench', label: 'Wyciskanie leżąc' }, { key: 'squat', label: 'Przysiad ze sztangą' }, { key: 'deadlift', label: 'Martwy ciąg' }, { key: 'ohp', label: 'Wyciskanie żołnierskie (OHP)' }].map((lift) => {
-                    const rows = enrichedPlayers.map((p) => ({ p, raw: p.lifts[lift.key], rm: bestRM(p, lift.key) })).sort((a, b) => b.rm - a.rm);
+                    const rows = enrichedPlayers.map((p) => ({ p, raw: bestSet(p, lift.key), rm: bestRM(p, lift.key) })).sort((a, b) => b.rm - a.rm);
                     const best = rows[0]?.rm || 1;
                     return (
                       <div key={lift.key} className="p-4 rounded-2xl ia-sub space-y-3">
@@ -3236,7 +3719,7 @@ export default function App() {
               </div>
               <div className="lg:col-span-3 ia-glass ia-card p-5 space-y-4" data-testid="pr-history">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h3 className="text-sm font-black uppercase tracking-tight">Historia siły – {currentEnriched.name}</h3>
+                  <h3 className="text-sm font-black uppercase tracking-tight ia-h">Historia siły – {currentEnriched.name}</h3>
                   <div className="ia-seg overflow-x-auto ia-scroll max-w-full">
                     {LIFT_KEYS.map((k) => (
                       <button key={k} onClick={() => setHistLift(k)} className={histLift === k ? 'on' : ''}>{LIFT_NAMES[k]}</button>
@@ -3258,7 +3741,7 @@ export default function App() {
                         </div>
                         <div className="text-right shrink-0">
                           <div className="font-black ia-accent tabular-nums">{r.rm} kg</div>
-                          {r.pr && <div className="text-[10px] font-black text-amber-300">🏆 REKORD</div>}
+                          {r.pr && <div className={`text-[10px] font-black ${r.status === 'disputed' ? 'text-rose-300' : r.status === 'pending' ? 'text-amber-300' : 'text-amber-300'}`} data-testid="set-status">{r.status === 'pending' ? '⏳ czeka na potwierdzenie' : r.status === 'disputed' ? '⚠️ sporny' : r.status === 'verified' ? '🏆 REKORD ✓' : '🏆 REKORD'}</div>}
                         </div>
                       </div>
                     ))}
