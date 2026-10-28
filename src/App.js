@@ -232,9 +232,7 @@ const autoEvaluateUploadedPhoto = (file, playerContext, zoomFactor = 1.0) => {
               return;
             }
           }
-        } catch (err) {
-          clearTimeout(timeoutId);
-        }
+        } catch (_) {}
 
         const baseEval = evaluatePhysiqueAI(playerContext);
         resolve({
@@ -1214,7 +1212,9 @@ export default function App() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 {[
                   { goal: 'Redukcja', kcal: liveCpmResult.cut },
-                  { goal: 'Czysta Masa', kcal: liveCpmResult.leanBulk }
+                  { goal: 'Rekompozycja', kcal: liveCpmResult.recomp },
+                  { goal: 'Czysta Masa', kcal: liveCpmResult.leanBulk },
+                  { goal: 'Masa Siłowa', kcal: liveCpmResult.powerBulk }
                 ].map((opt) => {
                   const m = calcMacros(opt.kcal, parseFloat(cpmForm.weight) || currentEnriched.currentWeight);
                   return (
@@ -1231,16 +1231,133 @@ export default function App() {
         )}
 
         {activeTab === 'gym' && currentEnriched && (
-          <div className={`${theme.bgCard} border ${theme.border} rounded-2xl p-5`}>
-            <h3 className="text-sm font-black uppercase mb-3">Siłownia & Rekordy</h3>
-            <p className={`text-xs ${theme.textMuted}`}>Zapisuj swoje boje i obliczaj 1RM / DOTS.</p>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="space-y-6">
+              <div className={`${theme.bgCard} border ${theme.border} rounded-2xl p-5`}>
+                <h3 className="text-sm font-black uppercase tracking-tight mb-3">Zapisz Rekord / Serię ({currentEnriched.name})</h3>
+                <form onSubmit={handleSaveLift} className="space-y-3 text-xs">
+                  <select value={liftForm.exercise} onChange={(e) => setLiftForm({ ...liftForm, exercise: e.target.value })} className={`w-full px-3 py-2 rounded-lg border ${theme.border} ${theme.bgSub} font-bold`}>
+                    <option value="bench">Wyciskanie leżąc (Bench Press)</option>
+                    <option value="squat">Przysiad ze sztangą (Squat)</option>
+                    <option value="deadlift">Martwy ciąg (Deadlift)</option>
+                    <option value="ohp">Wyciskanie żołnierskie (OHP)</option>
+                  </select>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className={`block mb-1 ${theme.textMuted}`}>Ciężar (kg)</label>
+                      <input type="number" step="0.5" value={liftForm.weight} onChange={(e) => { setLiftForm({ ...liftForm, weight: e.target.value }); setPlateWeight(parseFloat(e.target.value) || 20); }} className={`w-full px-3 py-2 rounded-lg border ${theme.border} ${theme.bgSub} font-bold`} />
+                    </div>
+                    <div>
+                      <label className={`block mb-1 ${theme.textMuted}`}>Powtórzenia</label>
+                      <input type="number" value={liftForm.reps} onChange={(e) => setLiftForm({ ...liftForm, reps: e.target.value })} className={`w-full px-3 py-2 rounded-lg border ${theme.border} ${theme.bgSub} font-bold`} />
+                    </div>
+                  </div>
+                  <button type="submit" className={`w-full py-2.5 rounded-xl font-black ${theme.accentBg} ${theme.btnText}`}>Zapisz Bój i Odpal Stoper (90s)</button>
+                </form>
+              </div>
+
+              <div className={`${theme.bgCard} border ${theme.border} rounded-2xl p-5`}>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-xs font-black uppercase">Kalkulator Talerzy (Gryf 20 kg)</h4>
+                  <input type="number" step="2.5" value={plateWeight} onChange={(e) => setPlateWeight(parseFloat(e.target.value) || 20)} className={`w-24 px-2 py-1 rounded border ${theme.border} ${theme.bgSub} text-xs font-bold text-right`} />
+                </div>
+                <div className={`p-4 rounded-xl border ${theme.border} ${theme.bgSub} flex items-center justify-center min-h-[90px]`}>
+                  <div className="w-8 h-3 bg-neutral-400 rounded-l" />
+                  <div className="w-2 h-8 bg-neutral-300 mr-1" />
+                  <div className="flex items-center gap-1">
+                    {calcPlatesPerSide(plateWeight).map((p, i) => (
+                      <div key={i} className={`${p.color} ${p.h} px-1.5 rounded flex items-center justify-center text-[10px] font-black shadow`}>{p.w}</div>
+                    ))}
+                  </div>
+                  <div className="w-6 h-3 bg-neutral-400 rounded-r ml-1" />
+                </div>
+              </div>
+            </div>
+
+            <div className={`lg:col-span-2 ${theme.bgCard} border ${theme.border} rounded-2xl p-5`}>
+              <h3 className="text-sm font-black uppercase tracking-tight mb-4">Rekordy Siłowe Ekipy (1RM)</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[
+                  { key: 'bench', label: 'Wyciskanie Leżąc' },
+                  { key: 'squat', label: 'Przysiad ze Sztangą' },
+                  { key: 'deadlift', label: 'Martwy Ciąg' },
+                  { key: 'ohp', label: 'Wyciskanie Żołnierskie (OHP)' }
+                ].map((lift) => (
+                  <div key={lift.key} className={`p-4 rounded-xl border ${theme.border} ${theme.bgSub} space-y-2.5`}>
+                    <div className="text-xs font-black uppercase">{lift.label}</div>
+                    {enrichedPlayers.map((p) => {
+                      const raw = p.lifts[lift.key];
+                      const rm = calc1RM(raw.weight, raw.reps);
+                      return (
+                        <div key={p.id} className="flex items-center justify-between text-xs border-t border-neutral-800 pt-2">
+                          <span className="font-bold">{p.name}</span>
+                          <div>
+                            <span className="font-bold">{raw.weight} kg × {raw.reps}</span>
+                            <span className={`ml-2 font-black ${theme.accentText}`}>1RM: {rm} kg</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
         {activeTab === 'charts' && currentEnriched && (
-          <div className={`${theme.bgCard} border ${theme.border} rounded-2xl p-5`}>
-            <h3 className="text-sm font-black uppercase mb-3">Wykres Progresu</h3>
-            <p className={`text-xs ${theme.textMuted}`}>Historia zmian wagi i sylwetki w czasie.</p>
+          <div className={`${theme.bgCard} border ${theme.border} rounded-2xl p-5 space-y-5`}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h3 className="text-sm font-black uppercase">Wykres Progresu – {currentEnriched.name} (DOTS: {currentEnriched.stats.dots})</h3>
+              <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                {[
+                  { id: 'weight', label: 'Waga (kg)' },
+                  { id: 'waist', label: 'Pas (cm)' },
+                  { id: 'aiScore', label: 'Ocena AI (1-10)' },
+                  { id: 'bench1RM', label: 'Ławka 1RM (kg)' },
+                  { id: 'kcal', label: 'Kalorie (kcal)' }
+                ].map((m) => (
+                  <button key={m.id} onClick={() => setChartMetric(m.id)} className={`px-3 py-1.5 rounded-lg font-bold border ${chartMetric === m.id ? `${theme.accentBg} ${theme.btnText} border-transparent` : `${theme.bgSub} ${theme.border} ${theme.textMuted}`}`}>{m.label}</button>
+                ))}
+              </div>
+            </div>
+
+            {(() => {
+              const hist = currentEnriched.history || [];
+              const vals = hist.map((h) => Number(h[chartMetric]) || currentEnriched.ai.overall || 0);
+              const minVal = Math.min(...vals) - 1;
+              const maxVal = Math.max(...vals) + 1;
+              const width = 700;
+              const height = 220;
+              const points = hist
+                .map((h, i) => {
+                  const val = Number(h[chartMetric]) || currentEnriched.ai.overall || 0;
+                  const x = 50 + (i / Math.max(1, hist.length - 1)) * (width - 100);
+                  const y = height - 35 - ((val - minVal) / Math.max(1, maxVal - minVal)) * (height - 70);
+                  return `${x},${y}`;
+                })
+                .join(' ');
+
+              return (
+                <div className={`p-4 rounded-xl border ${theme.border} ${theme.bgSub} overflow-x-auto`}>
+                  <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-56">
+                    <polyline fill="none" stroke={theme.swatch} strokeWidth="3.5" points={points} />
+                    {hist.map((h, i) => {
+                      const val = Number(h[chartMetric]) || currentEnriched.ai.overall || 0;
+                      const x = 50 + (i / Math.max(1, hist.length - 1)) * (width - 100);
+                      const y = height - 35 - ((val - minVal) / Math.max(1, maxVal - minVal)) * (height - 70);
+                      return (
+                        <g key={i}>
+                          <circle cx={x} cy={y} r="5" fill={theme.swatch} />
+                          <text x={x} y={y - 12} textAnchor="middle" fill="currentColor" className="text-[11px] font-bold">{val}</text>
+                          <text x={x} y={height - 10} textAnchor="middle" fill="#a3a3a3" className="text-[10px]">{h.date}</text>
+                        </g>
+                      );
+                    })}
+                  </svg>
+                </div>
+              );
+            })()}
           </div>
         )}
       </main>
