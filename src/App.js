@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 
-const DEFAULT_SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL || 'https://syxtkmwvudpjojhbbjwp.supabase.co';
-const DEFAULT_SUPABASE_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5eHRrbXd2dWRwam9qaGJiandwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMzUxOTMsImV4cCI6MjEwODYxMTE5M30.drElt0CdI57MGBFQgeawf2zt6VGFbCCSRjGMezKgpZ4';
+const DEFAULT_SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL || '';
+const DEFAULT_SUPABASE_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY || '';
 
 const Icon = ({ name, className = 'w-4 h-4' }) => {
   const paths = {
@@ -24,7 +24,8 @@ const Icon = ({ name, className = 'w-4 h-4' }) => {
     close: <path d="M18 6 6 18M6 6l12 12" />,
     timer: <><line x1="10" x2="14" y1="2" y2="2" /><line x1="12" x2="15" y1="14" y2="11" /><circle cx="12" cy="14" r="8" /></>,
     arrows: <><path d="M8 3 4 7l4 4" /><path d="M4 7h16" /><path d="m16 21 4-4-4-4" /><path d="M20 17H4" /></>,
-    refresh: <><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" /><path d="M16 16h5v5" /></>
+    refresh: <><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" /><path d="M16 16h5v5" /></>,
+    message: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
   };
   return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{paths[name] || paths.cpu}</svg>;
 };
@@ -154,7 +155,7 @@ const evaluatePhysiqueAI = (player, photoIdx = 0) => {
   };
 };
 
-const autoEvaluateUploadedPhoto = (file, playerContext, zoomFactor = 1.0) => {
+const autoEvaluateUploadedPhoto = (file, playerContext, zoomFactor = 1.0, roastMode = false) => {
   return new Promise((resolve) => {
     const fallbackToLocal = () => {
       const baseEval = evaluatePhysiqueAI(playerContext);
@@ -167,8 +168,8 @@ const autoEvaluateUploadedPhoto = (file, playerContext, zoomFactor = 1.0) => {
           armScore: parseFloat(baseEval.armScore),
           estBf: baseEval.estBf,
           lightingNote: 'Tryb awaryjny',
-          verdict: baseEval.summary,
-          source: 'Analizator Biometryczny AI'
+          verdict: roastMode ? "Mocne strony: Brak | Braki do poprawy: Cała sylwetka do przebudowy | Plan naprawczy: Mniej gadania, więcej żelaza" : baseEval.summary,
+          source: roastMode ? 'Bezlitosny Roast AI' : 'Analizator Biometryczny AI'
         }
       });
     };
@@ -202,6 +203,7 @@ const autoEvaluateUploadedPhoto = (file, playerContext, zoomFactor = 1.0) => {
             signal: controller.signal,
             body: JSON.stringify({
               imageBase64: dataUrl.split(',')[1],
+              roastMode,
               player: {
                 heightCm: playerContext.heightCm,
                 currentWeight: playerContext.currentWeight,
@@ -228,7 +230,7 @@ const autoEvaluateUploadedPhoto = (file, playerContext, zoomFactor = 1.0) => {
                   lightingNote: serverAI.lightingNote || 'Zweryfikowano przez Gemini Vision AI',
                   verdict: serverAI.verdict,
                   overall: parseFloat(overall),
-                  source: 'Gemini Vision AI (Chmura)'
+                  source: roastMode ? 'Bezlitosny Roast AI 🔥' : 'Gemini Vision AI (Chmura)'
                 }
               });
               return;
@@ -238,20 +240,7 @@ const autoEvaluateUploadedPhoto = (file, playerContext, zoomFactor = 1.0) => {
           clearTimeout(timeoutId);
         }
 
-        const baseEval = evaluatePhysiqueAI(playerContext);
-        resolve({
-          dataUrl,
-          aiVision: {
-            overall: baseEval.overall,
-            vScore: parseFloat(baseEval.vScore),
-            defScore: parseFloat(baseEval.defScore),
-            armScore: parseFloat(baseEval.armScore),
-            estBf: baseEval.estBf,
-            lightingNote: 'Analiza proporcji zakończona',
-            verdict: baseEval.summary,
-            source: 'Analizator Biometryczny AI'
-          }
-        });
+        fallbackToLocal();
       };
       img.onerror = fallbackToLocal;
       img.src = e.target.result;
@@ -317,10 +306,12 @@ const INITIAL_PLAYERS = [
         weight: 84.0,
         waist: 85.0,
         note: 'Profil startowy.',
+        reactions: { dzik: 2, swinia: 1, bocian: 0, podejrzany: 0 },
+        comments: [{ author: 'Gibasek', text: 'Nawet dzik z tego będzie' }],
         url: createDemoPhysiquePoster('Olek', 'Redukcja', 84.0, 85.0, 105.0, '#e11d48')
       }
     ],
-    history: [{ date: 'Start', weight: 84.0, waist: 85.0, bench1RM: 93, kcal: 2500, aiScore: 5.5 }]
+    history: [{ date: 'Start', weight: 84.0, waist: 85.0, bench1RM: 93, kcal: 2500, aiScore: 5.1 }]
   }
 ];
 
@@ -367,8 +358,12 @@ export default function App() {
 
   const [rawPhotoFile, setRawPhotoFile] = useState(null);
   const [photoZoom, setPhotoZoom] = useState(1.0);
+  const [roastMode, setRoastMode] = useState(false);
   const [bodyForm, setBodyForm] = useState({ weight: '', waist: '', biceps: '', chest: '', note: '', photoPreview: null, autoAiResult: null });
   const [isAnalyzingPhoto, setIsAnalyzingPhoto] = useState(false);
+
+  // Stan dla wpisywania komentarzy pod zdjęciami
+  const [commentInput, setCommentInput] = useState('');
 
   const [liftForm, setLiftForm] = useState({ exercise: 'bench', weight: '100', reps: '5' });
   const [plateWeight, setPlateWeight] = useState(100);
@@ -455,22 +450,15 @@ export default function App() {
 
   useEffect(() => { fetchCloudStateManual(); }, [sbUrl, sbKey]);
 
-  // ==========================================================================
-  // EKSPORT I IMPORT CAŁEJ BAZY DO PLIKU .JSON (KOPIA ZAPASOWA EKIPY)
-  // ==========================================================================
+  // Eksport i Import Bazy JSON
   const handleExportDatabase = () => {
     try {
-      const backupPayload = {
-        version: 'IronArchive_v1',
-        exportedAt: new Date().toISOString(),
-        players
-      };
+      const backupPayload = { version: 'IronArchive_v1', exportedAt: new Date().toISOString(), players };
       const blob = new Blob([JSON.stringify(backupPayload, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      const dateStr = new Date().toISOString().slice(0, 10);
       a.href = url;
-      a.download = `iron-archive-baza-${dateStr}.json`;
+      a.download = `iron-archive-baza-${new Date().toISOString().slice(0, 10)}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -496,7 +484,7 @@ export default function App() {
         setActiveId(importedPlayers[0].id);
         alert(`Zaimportowano pomyślnie bazę (${importedPlayers.length} osób)!`);
       } catch (_) {
-        alert('Błąd odczytu pliku .json – upewnij się, że wybierasz pobrany wcześniej plik kopii zapasowej.');
+        alert('Błąd odczytu pliku .json');
       }
     };
     reader.readAsText(file);
@@ -540,7 +528,43 @@ export default function App() {
     }
   }, [activePlayer?.id, activePlayer?.goal, activePlayer?.dietKcal, activePlayer?.pal]);
 
+  // Automatyczne przypinanie odznak (tytułów) dla ekipy
   const enrichedPlayers = useMemo(() => {
+    // Znajdź króla estetyki (najwyższa ocena AI)
+    let bestAiId = null;
+    let maxAi = -1;
+    // Znajdź najsilniejszego dzika (najwyższy DOTS)
+    let bestDotsId = null;
+    let maxDots = -1;
+    // Największy bęben (najwyższy whtr)
+    let maxWhtrId = null;
+    let maxWhtr = -1;
+    // Król bufetu (redukcja ale waga rośnie)
+    const bufetIds = new Set();
+
+    players.forEach((p) => {
+      const evalRes = evaluatePhysiqueAI(p, 0);
+      if (evalRes.overall > maxAi) {
+        maxAi = evalRes.overall;
+        bestAiId = p.id;
+      }
+      const bench1RM = calc1RM(p.lifts.bench.weight, p.lifts.bench.reps);
+      const total1RM = bench1RM + calc1RM(p.lifts.squat.weight, p.lifts.squat.reps) + calc1RM(p.lifts.deadlift.weight, p.lifts.deadlift.reps);
+      const dots = calcDOTS(p.currentWeight, total1RM);
+      if (dots > maxDots) {
+        maxDots = dots;
+        bestDotsId = p.id;
+      }
+      const whtr = (p.measurements?.waist?.current || 85) / p.heightCm;
+      if (whtr > maxWhtr) {
+        maxWhtr = whtr;
+        maxWhtrId = p.id;
+      }
+      if (p.goal.toLowerCase().includes('redukcja') && p.currentWeight > p.startWeight) {
+        bufetIds.add(p.id);
+      }
+    });
+
     return players.map((p) => {
       const bench1RM = calc1RM(p.lifts.bench.weight, p.lifts.bench.reps);
       const squat1RM = calc1RM(p.lifts.squat.weight, p.lifts.squat.reps);
@@ -552,7 +576,14 @@ export default function App() {
       const cpmData = calcCPMData(p.currentWeight, p.heightCm, p.age || 22, p.sex || 'M', p.pal || 1.55);
       const macros = calcMacros(p.dietKcal, p.currentWeight, p.dietProtein);
       const ai = evaluatePhysiqueAI(p, 0);
-      return { ...p, stats: { bench1RM, squat1RM, deadlift1RM, ohp1RM, total1RM, dots }, bmiData, cpmData, macros, ai };
+
+      const badges = [];
+      if (p.id === bestAiId) badges.push({ text: '👑 Król Estetyki', color: 'bg-amber-500/20 text-amber-300 border-amber-500/40' });
+      if (p.id === bestDotsId) badges.push({ text: '🏋️ Najsilniejszy Dzik', color: 'bg-rose-500/20 text-rose-300 border-rose-500/40' });
+      if (bufetIds.has(p.id)) badges.push({ text: '🍔 Król Bufetu', color: 'bg-orange-500/20 text-orange-300 border-orange-500/40' });
+      if (p.id === maxWhtrId) badges.push({ text: '📏 Największy Bęben', color: 'bg-purple-500/20 text-purple-300 border-purple-500/40' });
+
+      return { ...p, stats: { bench1RM, squat1RM, deadlift1RM, ohp1RM, total1RM, dots }, bmiData, cpmData, macros, ai, badges };
     });
   }, [players]);
 
@@ -575,7 +606,7 @@ export default function App() {
     return calcCPMData(w, h, a, cpmForm.sex, p);
   }, [cpmForm, currentEnriched]);
 
-  const runPhotoAnalysis = async (fileToScan, zoomToUse) => {
+  const runPhotoAnalysis = async (fileToScan, zoomToUse, isRoast) => {
     if (!fileToScan) return;
     setIsAnalyzingPhoto(true);
     try {
@@ -589,7 +620,7 @@ export default function App() {
         }
       };
 
-      const evaluated = await autoEvaluateUploadedPhoto(fileToScan, tempContext, zoomToUse);
+      const evaluated = await autoEvaluateUploadedPhoto(fileToScan, tempContext, zoomToUse, isRoast);
       setBodyForm((prev) => ({ ...prev, photoPreview: evaluated.dataUrl, autoAiResult: evaluated.aiVision }));
     } catch (_) {
       alert('Nie udało się przeanalizować zdjęcia.');
@@ -602,13 +633,20 @@ export default function App() {
     const file = e.target.files?.[0];
     if (!file) return;
     setRawPhotoFile(file);
-    await runPhotoAnalysis(file, photoZoom);
+    await runPhotoAnalysis(file, photoZoom, roastMode);
   };
 
   const handleChangeZoom = async (newZoom) => {
     setPhotoZoom(newZoom);
     if (rawPhotoFile) {
-      await runPhotoAnalysis(rawPhotoFile, newZoom);
+      await runPhotoAnalysis(rawPhotoFile, newZoom, roastMode);
+    }
+  };
+
+  const handleToggleRoast = async (newRoastVal) => {
+    setRoastMode(newRoastVal);
+    if (rawPhotoFile) {
+      await runPhotoAnalysis(rawPhotoFile, photoZoom, newRoastVal);
     }
   };
 
@@ -652,6 +690,8 @@ export default function App() {
       weight: w,
       waist,
       note: bodyForm.note || `Aktualizacja sylwetki (${activePlayer.goal} • ${activePlayer.dietKcal} kcal)`,
+      reactions: { dzik: 0, swinia: 0, bocian: 0, podejrzany: 0 },
+      comments: [],
       url: photoUrl,
       aiVision: finalAiVision
     };
@@ -698,6 +738,48 @@ export default function App() {
       })
     );
     setPhotoIdxMap((prev) => ({ ...prev, [playerId]: 0 }));
+  };
+
+  // Reakcje pod zdjęciem (Dzik, Świnia, Bocian, Podejrzany)
+  const handleAddReaction = (playerId, photoId, reactionKey) => {
+    savePlayersPermanently((prev) =>
+      prev.map((p) => {
+        if (p.id !== playerId) return p;
+        const updatedPhotos = (p.photos || []).map((ph) => {
+          if (ph.id !== photoId) return ph;
+          const currentReactions = ph.reactions || { dzik: 0, swinia: 0, bocian: 0, podejrzany: 0 };
+          return {
+            ...ph,
+            reactions: {
+              ...currentReactions,
+              [reactionKey]: (currentReactions[reactionKey] || 0) + 1
+            }
+          };
+        });
+        return { ...p, photos: updatedPhotos };
+      })
+    );
+  };
+
+  // Dodawanie komentarza pod zdjęciem
+  const handleAddComment = (playerId, photoId, e) => {
+    e.preventDefault();
+    if (!commentInput.trim()) return;
+    const authorName = activePlayer?.name || 'Kolega z ekipy';
+    const newComment = { author: authorName, text: commentInput.trim() };
+
+    savePlayersPermanently((prev) =>
+      prev.map((p) => {
+        if (p.id !== playerId) return p;
+        const updatedPhotos = (p.photos || []).map((ph) => {
+          if (ph.id !== photoId) return ph;
+          const currentComments = ph.comments || [];
+          return { ...ph, comments: [...currentComments, newComment] };
+        });
+        return { ...p, photos: updatedPhotos };
+      })
+    );
+    setCommentInput('');
   };
 
   const applyCalculatedCpmToProfile = (selectedGoalName, targetKcalValue) => {
@@ -766,7 +848,7 @@ export default function App() {
       currentWeight: w,
       measurements: { waist: { start: waist, current: waist }, biceps: { start: bic, current: bic }, chest: { start: chest, current: chest } },
       lifts: { bench: { weight: 80, reps: 5 }, squat: { weight: 100, reps: 5 }, deadlift: { weight: 120, reps: 5 }, ohp: { weight: 50, reps: 5 } },
-      photos: [{ id: 'ph_' + id, date: new Date().toLocaleDateString('pl-PL'), weight: w, waist, note: 'Profil startowy.', url: createDemoPhysiquePoster(newPlayer.name.trim(), newPlayer.goal, w, waist, chest, theme.swatch) }],
+      photos: [{ id: 'ph_' + id, date: new Date().toLocaleDateString('pl-PL'), weight: w, waist, note: 'Profil startowy.', reactions: { dzik: 0, swinia: 0, bocian: 0, podejrzany: 0 }, comments: [], url: createDemoPhysiquePoster(newPlayer.name.trim(), newPlayer.goal, w, waist, chest, theme.swatch) }],
       history: [{ date: 'Start', weight: w, waist, bench1RM: 93, kcal, aiScore: 5.5 }]
     };
 
@@ -832,7 +914,7 @@ export default function App() {
               <button type="button" onClick={() => setShowCloudModal(false)} className="text-neutral-400 hover:text-white"><Icon name="close" /></button>
             </div>
             <p className={theme.textMuted}>
-              Wklej swój Project URL oraz klucz <code>anon public</code> z Supabase, aby dane zapisywały się w chmurze dla wszystkich 5 osób.
+              Wklej swój Project URL oraz klucz <code>anon public</code> z Supabase, aby dane zapisywały się w chmurze dla całej 5 osób.
             </p>
             <div>
               <label className="block mb-1 font-bold">Supabase Project URL</label>
@@ -855,12 +937,11 @@ export default function App() {
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${theme.accentSoft}`}><Icon name="cpu" className="w-5 h-5" /></div>
             <div>
               <h1 className="text-lg font-black tracking-tight uppercase">IRON // <span className={theme.accentText}>ARCHIVE</span></h1>
-              <p className={`text-xs ${theme.textMuted}`}>Zdjęcia Sylwetek (Gemini Vision AI) • Makro & CPM • Kopia Bazy JSON</p>
+              <p className={`text-xs ${theme.textMuted}`}>Zdjęcia Sylwetek (Gemini Vision AI) • Reakcje & Roast • Kopia Bazy JSON</p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {/* PRZYCISKI EKSPORTU I IMPORTU BAZY DANYCH (.JSON) */}
             <button
               type="button"
               onClick={handleExportDatabase}
@@ -1040,7 +1121,7 @@ export default function App() {
           ))}
         </div>
 
-        {/* ZAKŁADKA 1: ZDJĘCIA & SĘDZIA AI */}
+        {/* ZAKŁADKA 1: ZDJĘCIA & SĘDZIA AI + TRYB ROAST */}
         {activeTab === 'ai_physique' && currentEnriched && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className={`lg:col-span-4 ${theme.bgCard} border ${theme.border} rounded-2xl p-5 h-fit`}>
@@ -1049,7 +1130,7 @@ export default function App() {
                 Dodaj Zdjęcie ({currentEnriched.name})
               </h3>
               <p className={`text-xs ${theme.textMuted} mb-3`}>
-                Wybierz zdjęcie – Sędzia AI oceni sylwetkę i wskaże braki.
+                Wybierz zdjęcie w szatni – Sędzia AI oceni sylwetkę i wskaże braki.
               </p>
 
               {isLocked ? (
@@ -1058,6 +1139,20 @@ export default function App() {
                 </div>
               ) : (
                 <form onSubmit={handleSaveBodyAndPhoto} className="space-y-3 text-xs">
+                  {/* Przełącznik trybu AI: Trener vs Bezlitosny Roast */}
+                  <div className="flex items-center justify-between gap-1 p-2 rounded-xl bg-black/40 border border-neutral-800">
+                    <span className={`text-[11px] font-bold ${roastMode ? 'text-rose-500' : theme.textMuted}`}>
+                      {roastMode ? '🔥 Tryb: Bezlitosny Roast' : '🛡️ Tryb: Trener (Kultura)'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleRoast(!roastMode)}
+                      className={`px-3 py-1 rounded-lg text-[11px] font-black transition-colors ${roastMode ? 'bg-rose-600 text-white' : 'bg-neutral-800 text-neutral-300'}`}
+                    >
+                      {roastMode ? 'Włączony' : 'Wyłączony'}
+                    </button>
+                  </div>
+
                   <div className="flex items-center justify-between gap-1">
                     <span className={`text-[11px] font-semibold ${theme.textMuted}`}>Kadr dla AI:</span>
                     <div className="flex gap-1">
@@ -1156,15 +1251,25 @@ export default function App() {
                   const displayedPhoto = p.photos?.[currIdx] || p.photos?.[0];
                   const photoEval = evaluatePhysiqueAI(p, currIdx);
                   const verdictParts = String(displayedPhoto?.aiVision?.verdict || photoEval.summary).split(' | ');
+                  const reactions = displayedPhoto?.reactions || { dzik: 0, swinia: 0, bocian: 0, podejrzany: 0 };
+                  const comments = displayedPhoto?.comments || [];
 
                   return (
                     <div key={p.id} className={`${theme.bgCard} border ${theme.border} rounded-2xl overflow-hidden flex flex-col justify-between shadow-lg`}>
                       <div className="p-4 flex items-start justify-between gap-2 border-b border-neutral-800">
                         <div>
-                          <h4 className="text-base font-black">{p.name}</h4>
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-base font-black">{p.name}</h4>
+                            {/* Odznaki / Tytuły na karcie */}
+                            {p.badges.map((b, bIdx) => (
+                              <span key={bIdx} className={`px-2 py-0.5 rounded text-[10px] font-black border ${b.color}`}>
+                                {b.text}
+                              </span>
+                            ))}
+                          </div>
                           <div className="flex flex-wrap items-center gap-1.5 mt-1">
                             <span className={`px-2 py-0.5 rounded text-[11px] font-bold border ${getGoalBadgeStyle(p.goal)}`}>
-                              {p.goal} • {p.dietKcal} kcal (CPM: {p.cpmData.cpm})
+                              {p.goal} • {p.dietKcal} kcal
                             </span>
                             <span className={`text-[11px] font-bold ${p.bmiData.tone}`}>• BMI {p.bmiData.bmi}</span>
                           </div>
@@ -1201,6 +1306,25 @@ export default function App() {
                         </div>
                       )}
 
+                      {/* SZYBKIE REAKCJE POD ZDJĘCIEM (DZIK, ŚWINIA, BOCIAN, PODEJRZANY) */}
+                      <div className="px-4 py-2.5 bg-black/40 border-b border-neutral-800 flex flex-wrap items-center gap-2">
+                        {[
+                          { key: 'dzik', icon: '🦍', label: 'Dzik', count: reactions.dzik },
+                          { key: 'swinia', icon: '🐷', label: 'Świnie', count: reactions.swinia },
+                          { key: 'bocian', icon: '🦩', label: 'Bocian', count: reactions.bocian },
+                          { key: 'podejrzany', icon: '💉', label: 'Podejrzany', count: reactions.podejrzany }
+                        ].map((r) => (
+                          <button
+                            key={r.key}
+                            onClick={() => handleAddReaction(p.id, displayedPhoto.id, r.key)}
+                            className="px-2.5 py-1 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-bold flex items-center gap-1 border border-neutral-700 transition-colors"
+                          >
+                            <span>{r.icon}</span>
+                            <span>{r.count || 0}</span>
+                          </button>
+                        ))}
+                      </div>
+
                       <div className="p-4 space-y-3 text-xs">
                         <div className={`grid grid-cols-2 gap-2 p-2.5 rounded-xl border ${theme.border} ${theme.bgSub}`}>
                           <div>
@@ -1224,6 +1348,34 @@ export default function App() {
                         <div className="space-y-1.5">
                           <div className={`text-[10px] font-black uppercase ${theme.accentText}`}>Analiza i Braki ({photoEval.source}):</div>
                           {verdictParts.map((part, idx) => (<p key={idx} className={`${theme.textMuted} leading-relaxed`}>{part}</p>))}
+                        </div>
+
+                        {/* SEKCJA KOMENTARZY POD ZDJĘCIEM */}
+                        <div className="pt-2 border-t border-neutral-800 space-y-2">
+                          <div className="font-bold text-[11px] uppercase flex items-center gap-1 text-neutral-400">
+                            <Icon name="message" className="w-3.5 h-3.5" /> Komentarze ekipy ({comments.length}):
+                          </div>
+                          {comments.map((c, cIdx) => (
+                            <div key={cIdx} className="p-2 rounded-lg bg-neutral-950 text-[11px] border border-neutral-800">
+                              <span className={`font-black ${theme.accentText}`}>{c.author}: </span>
+                              <span className="text-neutral-200">{c.text}</span>
+                            </div>
+                          ))}
+
+                          {!isLocked && (
+                            <form onSubmit={(e) => handleAddComment(p.id, displayedPhoto.id, e)} className="flex gap-1.5 pt-1">
+                              <input
+                                type="text"
+                                placeholder={`Napisz szczerą opinię jako ${activePlayer.name}...`}
+                                value={commentInput}
+                                onChange={(e) => setCommentInput(e.target.value)}
+                                className={`flex-1 px-2.5 py-1.5 rounded-lg border ${theme.border} ${theme.bgSub} text-[11px]`}
+                              />
+                              <button type="submit" className={`px-3 py-1.5 rounded-lg font-bold ${theme.accentBg} ${theme.btnText} text-[11px]`}>
+                                Wyślij
+                              </button>
+                            </form>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1256,13 +1408,13 @@ export default function App() {
                 <thead>
                   <tr className={`border-b ${theme.border} ${theme.textMuted} uppercase text-[11px]`}>
                     <th className="py-3 px-2">#</th>
-                    <th className="py-3 px-2">Zawodnik</th>
+                    <th className="py-3 px-2">Zawodnik & Odznaki</th>
                     <th className="py-3 px-2">Cel & Makro</th>
                     <th className="py-3 px-2">Waga</th>
                     <th className="py-3 px-2">BMI & BF%</th>
-                    <th className="py-3 px-2">Wymiary & V-Taper</th>
-                    <th className="py-3 px-2">DOTS & Trójbój</th>
-                    <th className="py-3 px-2 text-right">Sędzia AI</th>
+                    <th className="py-3 px-2">V-Taper</th>
+                    <th className="py-3 px-2">DOTS</th>
+                    <th className="py-3 px-2 text-right">AI</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-800">
@@ -1275,7 +1427,10 @@ export default function App() {
                           <div className="flex items-center gap-3">
                             {latestPhoto && <img src={latestPhoto.url} alt={p.name} onClick={() => setLightboxPhoto({ ...latestPhoto, playerName: p.name })} className="w-11 h-14 object-cover rounded-lg border border-neutral-700 cursor-pointer" />}
                             <div>
-                              <div className="font-black text-sm">{p.name}</div>
+                              <div className="font-black text-sm flex items-center gap-1.5">
+                                <span>{p.name}</span>
+                                {p.badges[0] && <span className={`px-1.5 py-0.5 rounded text-[9px] font-black border ${p.badges[0].color}`}>{p.badges[0].text}</span>}
+                              </div>
                               <div className={`text-[11px] ${theme.textMuted}`}>{p.heightCm} cm</div>
                             </div>
                           </div>
@@ -1289,83 +1444,27 @@ export default function App() {
                           <div className="font-black text-sm">BMI {p.bmiData.bmi}</div>
                           <div className={`text-[11px] ${p.bmiData.tone}`}>~{p.ai.estBf}% BF</div>
                         </td>
-                        <td className="py-3 px-2 font-bold">Pas: {p.measurements.waist.current}cm | V: {p.ai.vTaper}</td>
-                        <td className="py-3 px-2">
-                          <div className="font-black text-sm">{p.stats.dots} DOTS</div>
-                          <div className={`text-[11px] ${theme.textMuted}`}>Suma: {p.stats.total1RM} kg</div>
-                        </td>
-                        <td className="py-3 px-2 text-right font-black text-sm">{p.ai.overall}/10</td>
+                        <td className="py-3 px-2 font-bold">{p.ai.vTaper}</td>
+                        <td className="py-3 px-2 font-black text-sm">{p.stats.dots}</td>
+                        <td className="py-3 px-2 text-right font-black text-rose-500">{p.ai.overall}/10</td>
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
             </div>
-
-            {/* POJEDYNEK 1V1 */}
-            <div className={`${theme.bgCard} border ${theme.border} rounded-2xl p-5`}>
-              <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
-                <h3 className="text-sm font-black uppercase tracking-tight flex items-center gap-2">
-                  <Icon name="arrows" className={`w-4 h-4 ${theme.accentText}`} />
-                  Pojedynek Sylwetek 1v1
-                </h3>
-                <div className="flex items-center gap-2 text-xs">
-                  <select value={compA} onChange={(e) => setCompA(e.target.value)} className={`px-3 py-1.5 rounded-lg border ${theme.border} ${theme.bgSub} font-bold`}>
-                    {enrichedPlayers.map((p) => (<option key={p.id} value={p.id}>{p.name}</option>))}
-                  </select>
-                  <span className="font-black">VS</span>
-                  <select value={compB} onChange={(e) => setCompB(e.target.value)} className={`px-3 py-1.5 rounded-lg border ${theme.border} ${theme.bgSub} font-bold`}>
-                    {enrichedPlayers.map((p) => (<option key={p.id} value={p.id}>{p.name}</option>))}
-                  </select>
-                </div>
-              </div>
-
-              {(() => {
-                const pA = enrichedPlayers.find((p) => p.id === compA) || enrichedPlayers[0];
-                const pB = enrichedPlayers.find((p) => p.id === compB) || enrichedPlayers[1] || enrichedPlayers[0];
-                const phA = pA.photos?.[0];
-                const phB = pB.photos?.[0];
-
-                return (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      {[{ p: pA, ph: phA }, { p: pB, ph: phB }].map(({ p, ph }, idx) => (
-                        <div key={p.id + idx} className={`rounded-xl border ${theme.border} overflow-hidden bg-black`}>
-                          {ph && <img src={ph.url} alt={p.name} onClick={() => setLightboxPhoto({ ...ph, playerName: p.name })} className="w-full h-64 object-cover cursor-pointer" />}
-                          <div className="p-3 bg-neutral-950 flex items-center justify-between text-xs">
-                            <span className="font-black text-white">{p.name} ({p.currentWeight} kg)</span>
-                            <span className={`px-2 py-0.5 rounded border font-black ${theme.accentSoft}`}>AI: {p.ai.overall}/10</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
           </div>
         )}
 
-        {/* ZAKŁADKA 3: KALKULATOR CPM & MAKRO (4 WARIANTY) */}
+        {/* ZAKŁADKA 3: KALKULATOR CPM & MAKRO */}
         {activeTab === 'cpm' && currentEnriched && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className={`lg:col-span-5 ${theme.bgCard} border ${theme.border} rounded-2xl p-5 space-y-4`}>
               <h3 className="text-sm font-black uppercase tracking-tight flex items-center gap-2">
                 <Icon name="activity" className={`w-4 h-4 ${theme.accentText}`} />
-                Kalkulator PPM, CPM & Makro ({currentEnriched.name})
+                Kalkulator CPM & Makro
               </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
-                <div>
-                  <label className={`block mb-1 ${theme.textMuted}`}>Płeć</label>
-                  <select value={cpmForm.sex} onChange={(e) => setCpmForm({ ...cpmForm, sex: e.target.value })} className={`w-full px-3 py-2 rounded-lg border ${theme.border} ${theme.bgSub} font-bold`}>
-                    <option value="M">Mężczyzna</option>
-                    <option value="K">Kobieta</option>
-                  </select>
-                </div>
-                <div>
-                  <label className={`block mb-1 ${theme.textMuted}`}>Wiek</label>
-                  <input type="number" value={cpmForm.age} onChange={(e) => setCpmForm({ ...cpmForm, age: e.target.value })} className={`w-full px-3 py-2 rounded-lg border ${theme.border} ${theme.bgSub} font-bold`} />
-                </div>
+              <div className="grid grid-cols-2 gap-2.5 text-xs">
                 <div>
                   <label className={`block mb-1 ${theme.textMuted}`}>Waga (kg)</label>
                   <input type="number" step="0.1" value={cpmForm.weight} onChange={(e) => setCpmForm({ ...cpmForm, weight: e.target.value })} className={`w-full px-3 py-2 rounded-lg border ${theme.border} ${theme.bgSub} font-bold`} />
@@ -1388,33 +1487,29 @@ export default function App() {
             <div className={`lg:col-span-7 ${theme.bgCard} border ${theme.border} rounded-2xl p-5 space-y-5`}>
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-black uppercase">CPM i 4 Warianty Celu</h3>
-                {cpmSavedBanner && <span className="text-emerald-400 text-xs font-bold">✓ Zapisano w profilu!</span>}
+                {cpmSavedBanner && <span className="text-emerald-400 text-xs font-bold">✓ Zapisano!</span>}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className={`p-4 rounded-xl border ${theme.border} ${theme.bgSub}`}>
-                  <div className={`text-xs ${theme.textMuted} uppercase font-bold`}>PPM (Spoczynkowe)</div>
+                  <div className={`text-xs ${theme.textMuted} uppercase font-bold`}>PPM</div>
                   <div className="text-2xl font-black mt-1">{liveCpmResult.ppm} kcal</div>
                 </div>
                 <div className={`p-4 rounded-xl border ${theme.accentSoft}`}>
-                  <div className="text-xs uppercase font-bold">CPM (Zero Kaloryczne)</div>
+                  <div className="text-xs uppercase font-bold">CPM</div>
                   <div className="text-3xl font-black mt-1">{liveCpmResult.cpm} kcal</div>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 {[
-                  { goal: 'Redukcja', kcal: liveCpmResult.cut, diff: '-400 kcal od CPM' },
-                  { goal: 'Rekompozycja', kcal: liveCpmResult.recomp, diff: 'Równo z CPM (Zero)' },
-                  { goal: 'Czysta Masa', kcal: liveCpmResult.leanBulk, diff: '+300 kcal nad CPM' },
-                  { goal: 'Masa Siłowa', kcal: liveCpmResult.powerBulk, diff: '+500 kcal nad CPM' }
+                  { goal: 'Redukcja', kcal: liveCpmResult.cut },
+                  { goal: 'Rekompozycja', kcal: liveCpmResult.recomp },
+                  { goal: 'Czysta Masa', kcal: liveCpmResult.leanBulk },
+                  { goal: 'Masa Siłowa', kcal: liveCpmResult.powerBulk }
                 ].map((opt) => {
                   const m = calcMacros(opt.kcal, parseFloat(cpmForm.weight) || currentEnriched.currentWeight);
                   return (
                     <div key={opt.goal} className={`p-4 rounded-xl border ${theme.border} ${theme.bgSub} space-y-2`}>
-                      <div className="flex justify-between">
-                        <span className={`px-2 py-0.5 rounded font-bold border ${getGoalBadgeStyle(opt.goal)}`}>{opt.goal}</span>
-                        <span className={theme.textMuted}>{opt.diff}</span>
-                      </div>
-                      <div className="text-xl font-black">{opt.kcal} kcal / dzień</div>
+                      <div className="font-bold">{opt.goal}: {opt.kcal} kcal</div>
                       <div className="text-[11px] text-neutral-300">B: {m.protein}g • T: {m.fat}g • W: {m.carbs}g</div>
                       <button type="button" onClick={() => applyCalculatedCpmToProfile(opt.goal, opt.kcal)} className={`w-full py-2 rounded-lg font-bold border ${theme.border} hover:border-rose-500`}>Ustaw w profilu</button>
                     </div>
@@ -1425,7 +1520,7 @@ export default function App() {
           </div>
         )}
 
-        {/* ZAKŁADKA 4: SIŁOWNIA & SZTANGA */}
+        {/* ZAKŁADKA 4: SIŁOWNIA */}
         {activeTab === 'gym' && currentEnriched && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="space-y-6">
@@ -1501,7 +1596,7 @@ export default function App() {
           </div>
         )}
 
-        {/* ZAKŁADKA 5: WYKRESY & DOTS */}
+        {/* ZAKŁADKA 5: WYKRESY */}
         {activeTab === 'charts' && currentEnriched && (
           <div className={`${theme.bgCard} border ${theme.border} rounded-2xl p-5 space-y-5`}>
             <div className="flex flex-wrap items-center justify-between gap-3">
