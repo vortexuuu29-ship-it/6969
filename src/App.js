@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 
-const DEFAULT_SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL || '';
-const DEFAULT_SUPABASE_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY || '';
+const DEFAULT_SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL || 'https://syxtkmwvudpjojhbbjwp.supabase.co';
+const DEFAULT_SUPABASE_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5eHRrbXd2dWRwam9qaGJiandwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMzUxOTMsImV4cCI6MjEwODYxMTE5M30.drElt0CdI57MGBFQgeawf2zt6VGFbCCSRjGMezKgpZ4';
 
 const Icon = ({ name, className = 'w-4 h-4' }) => {
   const paths = {
