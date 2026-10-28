@@ -98,9 +98,9 @@ Zwróć WYŁĄCZNIE czysty obiekt JSON:
     }
 
     const parsed = JSON.parse(match[0]);
-    const fullVerdict = String(parsed.verdict || 'Analiza zakończona')
-      .replace(/\.\s+/g, ' | ')
-      .replace(/\.$/, '');
+    const rawVerdict = String(parsed.verdict || 'Analiza zakończona').trim();
+    // Jeśli model użył separatora " | ", zostawiamy go; kropki zamieniamy tylko w starym, jednozdaniowym formacie
+    const fullVerdict = (rawVerdict.includes(' | ') ? rawVerdict : rawVerdict.replace(/\.\s+/g, ' | ')).replace(/\.$/, '');
 
     return res.status(200).json({
       vScore: Number(parsed.vScore) || 6.0,
