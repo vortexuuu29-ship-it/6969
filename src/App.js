@@ -1743,6 +1743,21 @@ const commentKey = (c) => `${c.author}|${c.ts || 0}|${c.text}`;
 
 // Scala dwie wersje tego samego zawodnika: pola profilu z nowszej (updatedAt),
 // zdjęcia / reakcje / komentarze są łączone, żeby nikt nikomu nie nadpisał lajków.
+// PIN profilu: tylko lekki zamek przed przypadkową zmianą cudzych danych (hash trzymany razem z profilem)
+const pinHashOf = (id, pin) => {
+  const str = `ia1|${id}|${pin}`;
+  let h1 = 0xdeadbeef;
+  let h2 = 0x41c6ce57;
+  for (let i = 0; i < str.length; i += 1) {
+    const c = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 2654435761);
+    h2 = Math.imul(h2 ^ c, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0');
+};
+
 const mergePlayers = (a, b) => {
   const aNewer = (a.updatedAt || 0) >= (b.updatedAt || 0);
   const base = aNewer ? a : b;
@@ -1797,7 +1812,9 @@ const mergePlayers = (a, b) => {
   const deletedMeals = Array.from(new Set([...(a.deletedMeals || []), ...(b.deletedMeals || [])])).slice(-300);
   const mealsCut = Date.now() - MEAL_KEEP_DAYS * DAY_MS;
   const meals = unionBy(a.meals, b.meals, (m) => m.id).filter((m) => !deletedMeals.includes(m.id) && m.ts >= mealsCut);
-  return { ...base, photos, weighIns, prs, duels, meals, deletedMeals, deletedPhotos: deleted, updatedAt: Math.max(a.updatedAt || 0, b.updatedAt || 0) };
+  const deletedSets = Array.from(new Set([...(a.deletedSets || []), ...(b.deletedSets || [])])).slice(-100);
+  const mealSets = unionBy(a.mealSets, b.mealSets, (x) => x.id).filter((x) => !deletedSets.includes(x.id)).slice(-30);
+  return { ...base, photos, weighIns, prs, duels, meals, deletedMeals, mealSets, deletedSets, deletedPhotos: deleted, updatedAt: Math.max(a.updatedAt || 0, b.updatedAt || 0) };
 };
 
 async function sbRequest(cfg, path, { method = 'GET', body, prefer } = {}) {
@@ -1894,6 +1911,13 @@ export default function App() {
   const [scanMsg, setScanMsg] = useState('');
   const [renaming, setRenaming] = useState(false);
   const [renameVal, setRenameVal] = useState('');
+  const [unlocked, setUnlocked] = useState(() => { try { return JSON.parse(localStorage.getItem('ia_unlocked') || '{}') || {}; } catch (_) { return {}; } });
+  const [pinMode, setPinMode] = useState(null);
+  const [pinA, setPinA] = useState('');
+  const [pinB, setPinB] = useState('');
+  const [pinErr, setPinErr] = useState('');
+  const pinFails = useRef({ n: 0, until: 0 });
+  const [starForm, setStarForm] = useState(null);
   const [manualForm, setManualForm] = useState({ name: '', kcal: '', protein: '', fat: '', carbs: '' });
   const videoRef = useRef(null);
   const lastMealFile = useRef(null);
@@ -1944,7 +1968,9 @@ export default function App() {
 
   const theme = THEMES[themeKey] || THEMES.volt;
   const activePlayer = players.find((p) => p.id === activeId) || players[0];
-  const isLocked = Boolean(pinnedId && pinnedId !== activePlayer?.id);
+  const pinLocked = Boolean(activePlayer?.pinHash && unlocked[activePlayer.id] !== activePlayer.pinHash);
+  const otherPinned = Boolean(pinnedId && pinnedId !== activePlayer?.id);
+  const isLocked = otherPinned || pinLocked;
 
   const cfg = useMemo(() => {
     const url = (sbUrl || '').trim().replace(/\/+$/, '');
@@ -2008,6 +2034,21 @@ export default function App() {
   useEffect(() => { localStorage.setItem(THEME_KEY, themeKey); }, [themeKey]);
   useEffect(() => { if (activeId) localStorage.setItem('iron_archive_active_id', activeId); }, [activeId]);
   useEffect(() => { localStorage.setItem('iron_archive_pinned', pinnedId || ''); }, [pinnedId]);
+  useEffect(() => { try { localStorage.setItem('ia_unlocked', JSON.stringify(unlocked)); } catch (_) {} }, [unlocked]);
+  // instalacja jako aplikacja (PWA): znaczniki w <head> i service worker (tylko na https)
+  useEffect(() => {
+    try {
+      const head = document.head;
+      const ensure = (sel, make) => { if (!head.querySelector(sel)) head.appendChild(make()); };
+      ensure('link[rel="manifest"]', () => { const l = document.createElement('link'); l.rel = 'manifest'; l.href = '/manifest.json'; return l; });
+      ensure('link[rel="apple-touch-icon"]', () => { const l = document.createElement('link'); l.rel = 'apple-touch-icon'; l.href = '/logo192.png'; return l; });
+      ensure('meta[name="theme-color"]', () => { const m = document.createElement('meta'); m.name = 'theme-color'; m.content = '#0b0d10'; return m; });
+      ensure('meta[name="apple-mobile-web-app-capable"]', () => { const m = document.createElement('meta'); m.name = 'apple-mobile-web-app-capable'; m.content = 'yes'; return m; });
+      ensure('meta[name="apple-mobile-web-app-title"]', () => { const m = document.createElement('meta'); m.name = 'apple-mobile-web-app-title'; m.content = 'TRENdowaci'; return m; });
+      if ('serviceWorker' in navigator && window.location.protocol === 'https:') navigator.serviceWorker.register('/sw.js').catch(() => {});
+    } catch (_) {}
+  }, []);
+  useEffect(() => { setPinMode(null); setPinA(''); setPinB(''); setPinErr(''); setStarForm(null); }, [activeId]);
   useEffect(() => { if (!players.some((p) => p.id === activeId) && players[0]) setActiveId(players[0].id); }, [players, activeId]);
 
   // 1) ZAWSZE zapisuj do pamięci przeglądarki (dane przeżywają odświeżenie nawet bez chmury)
@@ -2522,6 +2563,49 @@ export default function App() {
     );
   };
 
+  const closePin = () => { setPinMode(null); setPinA(''); setPinB(''); setPinErr(''); };
+  const openPin = (m) => { setPinMode(m); setPinA(''); setPinB(''); setPinErr(''); };
+  const submitPin = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!activePlayer) return;
+    const id = activePlayer.id;
+    const pin = pinA.trim();
+    if (pinMode === 'unlock' || pinMode === 'remove') {
+      const wait = pinFails.current.until - Date.now();
+      if (wait > 0) { setPinErr(`Za dużo prób – odczekaj ${Math.ceil(wait / 1000)} s.`); return; }
+      if (pinHashOf(id, pin) !== activePlayer.pinHash) {
+        pinFails.current.n += 1;
+        if (pinFails.current.n >= 5) { pinFails.current = { n: 0, until: Date.now() + 30000 }; setPinErr('5 błędnych prób – odczekaj 30 s.'); } else setPinErr('Zły PIN.');
+        setPinA('');
+        return;
+      }
+      pinFails.current = { n: 0, until: 0 };
+      if (pinMode === 'unlock') {
+        const h = activePlayer.pinHash;
+        setUnlocked((u) => ({ ...u, [id]: h }));
+        closePin();
+        showToast('Profil odblokowany ✓');
+        return;
+      }
+      mutatePlayer(id, (p) => ({ ...p, pinHash: '' }), { toastMsg: 'PIN usunięty' });
+      setUnlocked((u) => { const n = { ...u }; delete n[id]; return n; });
+      closePin();
+      return;
+    }
+    if (!/^\d{4,6}$/.test(pin)) { setPinErr('PIN to 4–6 cyfr.'); return; }
+    if (pin !== pinB.trim()) { setPinErr('Oba PIN-y muszą być takie same.'); return; }
+    const h = pinHashOf(id, pin);
+    mutatePlayer(id, (p) => ({ ...p, pinHash: h }), { toastMsg: 'PIN ustawiony – ten telefon jest już odblokowany 🔐' });
+    setUnlocked((u) => ({ ...u, [id]: h }));
+    closePin();
+  };
+  const lockNow = () => {
+    if (!activePlayer) return;
+    const id = activePlayer.id;
+    setUnlocked((u) => { const n = { ...u }; delete n[id]; return n; });
+    closePin();
+    showToast('Profil zablokowany na tym telefonie 🔒');
+  };
   const startRename = () => {
     if (isLocked || !activePlayer) return;
     setRenameVal(activePlayer.name || '');
@@ -2585,7 +2669,7 @@ export default function App() {
     return d.getTime();
   };
   const closeFood = () => {
-    setFoodMode(null); setFoodDraft(null); setFoodResults(null); setScanOn(false); setFoodBusy(''); setFoodHint('');
+    setFoodMode(null); setFoodDraft(null); setFoodResults(null); setScanOn(false); setFoodBusy(''); setFoodHint(''); setStarForm(null);
   };
   const pickProduct = (prod, src) => {
     const grams = prod.servingG || 100;
@@ -2783,6 +2867,42 @@ export default function App() {
     const total = list.reduce((s, m) => s + m.kcal, 0);
     mutatePlayer(activeId, (p) => ({ ...p, meals: [...(p.meals || []), ...list].filter((m) => m.ts >= Date.now() - MEAL_KEEP_DAYS * DAY_MS) }), { toastMsg: `Dodano ${total} kcal do dziennika ✓` });
     closeFood();
+  };
+  const saveSet = () => {
+    if (isLocked || !foodDraft) return;
+    const name = String(starForm || '').trim().slice(0, 40);
+    if (!name) { showToast('Nazwij zestaw, np. „Moja owsianka”.', 'warn'); return; }
+    const items = foodDraft.items.filter((it) => it.name.trim()).map((it) => ({ name: it.name.trim().slice(0, 80), grams: Math.round(it.grams || 0), kcal: Math.round(it.kcal || 0), protein: r1(it.protein), fat: r1(it.fat), carbs: r1(it.carbs) }));
+    if (!items.length) return;
+    const set = { id: `s_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, ts: Date.now(), name, items };
+    mutatePlayer(activeId, (p) => {
+      const old = (p.mealSets || []).filter((x) => String(x.name).toLowerCase() === name.toLowerCase());
+      return { ...p, mealSets: [...(p.mealSets || []).filter((x) => !old.includes(x)), set].slice(-30), deletedSets: [...(p.deletedSets || []), ...old.map((x) => x.id)].slice(-100) };
+    }, { toastMsg: `Zapisano zestaw „${name}” ⭐` });
+    setStarForm(null);
+  };
+  const addSet = (st) => {
+    if (isLocked) return;
+    const base = dayTs();
+    const list = st.items.map((it, i) => ({ id: `m_${base.toString(36)}_s${i}_${Math.random().toString(36).slice(2, 6)}`, ts: base + i, type: mealType, name: it.name, grams: it.grams, kcal: it.kcal, protein: it.protein, fat: it.fat, carbs: it.carbs, src: 'set' }));
+    const total = list.reduce((a, m) => a + m.kcal, 0);
+    mutatePlayer(activeId, (p) => ({ ...p, meals: [...(p.meals || []), ...list] }), { toastMsg: `Dodano zestaw „${st.name}” (${total} kcal) ✓` });
+  };
+  const deleteSet = (id) => {
+    if (isLocked) return;
+    mutatePlayer(activeId, (p) => ({ ...p, mealSets: (p.mealSets || []).filter((x) => x.id !== id), deletedSets: [...(p.deletedSets || []), id].slice(-100) }));
+  };
+  const copyPrevDay = () => {
+    if (isLocked || !currentEnriched) return;
+    const d = new Date(foodDayTs);
+    d.setDate(d.getDate() - 1);
+    d.setHours(12, 0, 0, 0);
+    const prev = dayMeals(currentEnriched, d.getTime()).sort((a, b) => a.ts - b.ts);
+    if (!prev.length || dayMeals(currentEnriched, foodDayTs).length) return;
+    const base = dayTs();
+    const list = prev.map((m, i) => ({ ...m, id: `m_${base.toString(36)}_c${i}_${Math.random().toString(36).slice(2, 6)}`, ts: base + i }));
+    const total = list.reduce((a, m) => a + (m.kcal || 0), 0);
+    mutatePlayer(activeId, (p) => ({ ...p, meals: [...(p.meals || []), ...list] }), { toastMsg: `Skopiowano ${list.length} wpisów (${total} kcal) ✓` });
   };
   const deleteMeal = (id) => {
     if (isLocked) return;
@@ -3119,6 +3239,15 @@ export default function App() {
   })();
   const dayList = currentEnriched ? dayMeals(currentEnriched, foodDayTs).sort((a, b) => a.ts - b.ts) : [];
   const dayTot = sumMeals(dayList);
+  const prevList = (() => {
+    if (!currentEnriched) return [];
+    const d = new Date(foodDayTs);
+    d.setDate(d.getDate() - 1);
+    d.setHours(12, 0, 0, 0);
+    return dayMeals(currentEnriched, d.getTime());
+  })();
+  const canCopyPrev = prevList.length > 0 && dayList.length === 0;
+  const mealSets = (currentEnriched && currentEnriched.mealSets) || [];
   const dayTarget = currentEnriched?.dietKcal || 0;
   const dayLeft = Math.round(dayTarget - dayTot.kcal);
   const dayPct = dayTarget ? dayTot.kcal / dayTarget : 0;
@@ -3360,10 +3489,32 @@ export default function App() {
                     {!isLocked && !renaming && (
                       <button type="button" onClick={startRename} className="text-[11px] ia-faint hover:text-white underline underline-offset-2" data-testid="rename-start">✎ zmień imię</button>
                     )}
+                    {pinLocked && !otherPinned && !pinMode && (
+                      <button type="button" onClick={() => openPin('unlock')} className="px-2.5 py-1 rounded-full ia-accent-bg text-[11px] font-black" data-testid="pin-unlock-start">🔒 Odblokuj PIN-em</button>
+                    )}
+                    {!isLocked && !renaming && (
+                      <button type="button" onClick={() => openPin('set')} className="text-[11px] ia-faint hover:text-white underline underline-offset-2" data-testid="pin-set-start">{currentEnriched.pinHash ? '🔐 zmień PIN' : '🔐 ustaw PIN'}</button>
+                    )}
+                    {!isLocked && !renaming && currentEnriched.pinHash && (
+                      <>
+                        <button type="button" onClick={lockNow} className="text-[11px] ia-faint hover:text-white underline underline-offset-2" data-testid="pin-lock-now">zablokuj teraz</button>
+                        <button type="button" onClick={() => openPin('remove')} className="text-[11px] ia-faint hover:text-white underline underline-offset-2" data-testid="pin-remove-start">usuń PIN</button>
+                      </>
+                    )}
                     {currentEnriched.avatar && !isLocked && (
                       <button type="button" onClick={handleRemoveAvatar} className="text-[11px] ia-faint hover:text-white underline underline-offset-2">usuń zdjęcie profilowe</button>
                     )}
                   </div>
+                  {pinLocked && !pinMode && <p className="mt-2 text-[11px] ia-muted" data-testid="pin-banner">🔒 Profil chroniony PIN-em – możesz go oglądać, ale żeby coś zmienić (waga, rekordy, posiłki), odblokuj go.</p>}
+                  {pinMode && (
+                    <form onSubmit={submitPin} className="mt-3 flex flex-wrap items-center gap-2 text-xs ia-pop" data-testid="pin-form">
+                      <input type="password" inputMode="numeric" autoComplete="off" maxLength={6} autoFocus value={pinA} onChange={(e) => { setPinA(e.target.value.replace(/\D/g, '')); setPinErr(''); }} placeholder={pinMode === 'set' ? 'Nowy PIN (4–6 cyfr)' : 'PIN'} style={{ width: '10rem' }} className="ia-input" data-testid="pin-input" aria-label="PIN" />
+                      {pinMode === 'set' && <input type="password" inputMode="numeric" autoComplete="off" maxLength={6} value={pinB} onChange={(e) => { setPinB(e.target.value.replace(/\D/g, '')); setPinErr(''); }} placeholder="Powtórz PIN" style={{ width: '10rem' }} className="ia-input" data-testid="pin-input2" aria-label="Powtórz PIN" />}
+                      <button type="submit" className="ia-btn ia-accent-bg" data-testid="pin-submit">{{ unlock: 'Odblokuj', set: 'Zapisz PIN', remove: 'Usuń PIN' }[pinMode]}</button>
+                      <button type="button" onClick={closePin} className="ia-btn ia-ghost" data-testid="pin-cancel">Anuluj</button>
+                      {pinErr && <span className="text-rose-300 font-bold" data-testid="pin-err">{pinErr}</span>}
+                    </form>
+                  )}
                 </div>
                 <div className="flex sm:flex-col items-center gap-2 sm:gap-0 sm:text-center shrink-0">
                   <div className="ia-big text-6xl sm:text-7xl font-black leading-none ia-grad-text"><CountUp value={currentEnriched.ovr} /></div>
@@ -3392,7 +3543,7 @@ export default function App() {
                   </span>
                 </form>
               ) : (
-                <div className="relative z-10 mt-4 text-[11px] ia-muted">Przeglądasz profil znajomego – wybierz swoje imię u góry (albo odepnij „Mój telefon”), aby coś zapisać.</div>
+                <div className="relative z-10 mt-4 text-[11px] ia-muted">{pinLocked && !otherPinned ? 'Ten profil jest chroniony PIN-em – kliknij „Odblokuj PIN-em” przy imieniu, aby coś zapisać.' : 'Przeglądasz profil znajomego – wybierz swoje imię u góry (albo odepnij „Mój telefon”), aby coś zapisać.'}</div>
               )}
             </section>
           )}
@@ -3475,7 +3626,7 @@ export default function App() {
 
                 {isLocked ? (
                   <div className="p-4 rounded-2xl border border-amber-400/40 bg-amber-400/10 text-amber-200 text-xs leading-relaxed">
-                    Przeglądasz profil znajomego. Wybierz swoje imię u góry albo odepnij „Mój telefon”.
+                    {pinLocked && !otherPinned ? 'Profil chroniony PIN-em – odblokuj go przy imieniu, aby dodać zdjęcie.' : 'Przeglądasz profil znajomego. Wybierz swoje imię u góry albo odepnij „Mój telefon”.'}
                   </div>
                 ) : (
                   <form onSubmit={handleSaveBodyAndPhoto} className="space-y-3.5 text-xs">
@@ -3794,7 +3945,7 @@ export default function App() {
                   {enrichedPlayers.length < 2 ? (
                     <p className="text-xs ia-muted leading-relaxed">Dodaj znajomego do ekipy, żeby rzucać mu wyzwania.</p>
                   ) : isLocked ? (
-                    <p className="text-xs ia-muted leading-relaxed">Wybierz swoje imię u góry, aby rzucić wyzwanie.</p>
+                    <p className="text-xs ia-muted leading-relaxed">{pinLocked && !otherPinned ? 'Odblokuj profil PIN-em, aby rzucić wyzwanie.' : 'Wybierz swoje imię u góry, aby rzucić wyzwanie.'}</p>
                   ) : (
                     <form onSubmit={handleCreateDuel} className="ia-sub rounded-2xl p-3.5 space-y-3" data-testid="duel-form">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -3938,7 +4089,7 @@ export default function App() {
                             )}
                             {mine && <span className="text-[10px] ia-faint">Twój głos: {mine.v === 'ok' ? '✅ wierzę' : '🤨 podejrzane'}</span>}
                             {own && <span className="text-[10px] ia-faint">Potwierdzić musi ktoś inny ({r.okV} ✅ / {r.susV} 🤨)</span>}
-                            {!own && !mine && isLocked && <span className="text-[10px] ia-faint">Wybierz swoje imię, aby głosować</span>}
+                            {!own && !mine && isLocked && <span className="text-[10px] ia-faint">{pinLocked && !otherPinned ? 'Odblokuj profil PIN-em, aby głosować' : 'Wybierz swoje imię, aby głosować'}</span>}
                           </div>
                         </div>
                       );
@@ -4011,6 +4162,27 @@ export default function App() {
                   </div>
                   {intakeAdv && <p className="text-[11px] ia-muted leading-relaxed" data-testid="food-avg">Średnio zapisujesz <strong className="text-white">{intakeAdv.kcal} kcal</strong> dziennie (z {intakeAdv.days} pełnych dni).</p>}
                 </div>
+
+                {!isLocked && (
+                  <div className="ia-glass ia-card p-5 space-y-3 ia-up" data-testid="food-sets">
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="text-sm font-black uppercase tracking-tight ia-h">Moje zestawy</h3>
+                      {canCopyPrev && <button type="button" onClick={copyPrevDay} className="ia-btn ia-ghost !py-1.5 !px-2.5 text-[11px]" data-testid="copy-prev">📋 Skopiuj {mealDay === 0 ? 'wczoraj' : 'dzień wcześniej'} ({Math.round(sumMeals(prevList).kcal)} kcal)</button>}
+                    </div>
+                    {mealSets.length ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {mealSets.map((st) => (
+                          <div key={st.id} className="inline-flex items-center rounded-full border bg-white/5 border-white/10 text-[11px] font-bold overflow-hidden max-w-full">
+                            <button type="button" onClick={() => addSet(st)} title={st.items.map((i) => i.name).join(', ')} className="pl-2.5 pr-2 py-1.5 hover:bg-white/10 text-left truncate" data-testid="set-chip">⭐ {st.name} <span className="ia-faint font-medium">· {Math.round(sumMeals(st.items).kcal)} kcal</span></button>
+                            <button type="button" onClick={() => deleteSet(st.id)} className="px-2 py-1.5 ia-faint hover:text-rose-300" aria-label={`Usuń zestaw ${st.name}`} data-testid="set-del">✕</button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-[11px] ia-muted leading-relaxed">Dodaj posiłek i kliknij „⭐ Zapisz jako zestaw” – potem to samo śniadanie wpiszesz jednym kliknięciem.</p>
+                    )}
+                  </div>
+                )}
 
                 {recentMeals.length > 0 && !isLocked && (
                   <div className="ia-glass ia-card p-5 space-y-3 ia-up" data-testid="food-recent">
@@ -4168,6 +4340,14 @@ export default function App() {
                           <span className="ia-muted">Razem</span>
                           <span className="font-black tabular-nums" data-testid="draft-total">{Math.round(draftTot.kcal)} kcal <span className="ia-faint font-medium">• B {r1(draftTot.protein)} T {r1(draftTot.fat)} W {r1(draftTot.carbs)}</span></span>
                         </div>
+                        {starForm === null ? (
+                          <button type="button" onClick={() => setStarForm(foodDraft.items.length === 1 ? foodDraft.items[0].name : '')} className="text-[11px] ia-faint hover:text-white underline underline-offset-2" data-testid="set-save-start">⭐ Zapisz jako zestaw</button>
+                        ) : (
+                          <div className="flex gap-2" data-testid="set-save-form">
+                            <input type="text" autoComplete="off" maxLength={40} autoFocus value={starForm} onChange={(e) => setStarForm(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); saveSet(); } }} placeholder="Nazwa zestawu, np. Moja owsianka" className="ia-input" data-testid="set-name" />
+                            <button type="button" onClick={saveSet} className="ia-btn ia-ghost shrink-0" data-testid="set-save-go">Zapisz</button>
+                          </div>
+                        )}
                         <div className="flex gap-2">
                           <button type="button" onClick={closeFood} className="ia-btn ia-ghost" data-testid="draft-cancel">Anuluj</button>
                           <button type="button" onClick={commitDraft} disabled={!foodDraft.items.length} className="ia-btn ia-accent-bg flex-1" data-testid="draft-add">Dodaj do dziennika ({MEAL_TYPES.find((t) => t.id === mealType)?.label.toLowerCase()})</button>
@@ -4193,7 +4373,7 @@ export default function App() {
                           <div key={m.id} className="ia-sub rounded-xl px-3 py-2 flex items-center justify-between gap-2 text-xs" data-testid="meal-row">
                             <div className="min-w-0">
                               <div className="font-bold truncate">{m.name}</div>
-                              <div className="text-[10px] ia-faint">{m.grams ? `${m.grams} g • ` : ''}B {m.protein} T {m.fat} W {m.carbs}{{ photo: ' • 📸', ai: ' • ✨', barcode: ' • ▮▮', search: ' • 🔍' }[m.src] || ''}</div>
+                              <div className="text-[10px] ia-faint">{m.grams ? `${m.grams} g • ` : ''}B {m.protein} T {m.fat} W {m.carbs}{{ photo: ' • 📸', ai: ' • ✨', set: ' • ⭐', barcode: ' • ▮▮', search: ' • 🔍' }[m.src] || ''}</div>
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
                               <span className="font-black ia-accent tabular-nums">{m.kcal} kcal</span>
@@ -4422,7 +4602,7 @@ export default function App() {
                           <p className="text-[11px] ia-muted leading-relaxed">To szacunek z dokładnością ok. ±10%. Trzymaj się liczb przez 2–3 tygodnie i ważąc się rano na czczo oceniaj średnią tygodniową: jeśli waga nie idzie w oczekiwanym kierunku, skoryguj kalorie o 100–150 kcal.</p>
 
                           {isLocked ? (
-                            <div className="p-3 rounded-2xl border border-amber-400/40 bg-amber-400/10 text-amber-200 text-xs">Przeglądasz profil znajomego – wybierz swoje imię, aby zapisać wynik.</div>
+                            <div className="p-3 rounded-2xl border border-amber-400/40 bg-amber-400/10 text-amber-200 text-xs">{pinLocked && !otherPinned ? 'Profil chroniony PIN-em – odblokuj go, aby zapisać wynik.' : 'Przeglądasz profil znajomego – wybierz swoje imię, aby zapisać wynik.'}</div>
                           ) : (
                             <button type="button" onClick={applyInterviewToProfile} className="ia-btn ia-accent-bg w-full !py-3.5 text-sm"><Icon name="check" className="w-4 h-4" /> Zapisz w profilu ({currentEnriched.name})</button>
                           )}
@@ -4459,7 +4639,7 @@ export default function App() {
                       <div><label className="ia-label">Ciężar (kg)</label><input type="number" step="0.5" value={liftForm.weight} onChange={(e) => { setLiftForm({ ...liftForm, weight: e.target.value }); setPlateWeight(parseFloat(e.target.value) || 20); }} className="ia-input" /></div>
                       <div><label className="ia-label">Powtórzenia</label><input type="number" value={liftForm.reps} onChange={(e) => setLiftForm({ ...liftForm, reps: e.target.value })} className="ia-input" /></div>
                     </div>
-                    <button type="submit" disabled={isLocked} className="ia-btn ia-accent-bg w-full !py-2.5">{isLocked ? 'Wybierz swój profil' : 'Zapisz bój i odpal stoper (90 s)'}</button>
+                    <button type="submit" disabled={isLocked} className="ia-btn ia-accent-bg w-full !py-2.5">{isLocked ? (pinLocked && !otherPinned ? 'Odblokuj profil PIN-em' : 'Wybierz swój profil') : 'Zapisz bój i odpal stoper (90 s)'}</button>
                   </form>
                 </div>
 
