@@ -1223,6 +1223,147 @@ const detectBarcode = async (source) => {
   }
 };
 
+/* ------------------------------ Open Food Facts (zapas po stronie przeglądarki) ------------------------------ */
+const OFF_FIELDS = 'code,product_name,product_name_pl,generic_name,brands,nutriments,serving_size,serving_quantity';
+
+const offNum = (v) => {
+  if (v === null || v === undefined || v === '') return null;
+  const n = Number(String(v).replace(',', '.'));
+  return Number.isFinite(n) ? n : null;
+};
+const offR1 = (v) => Math.round(v * 10) / 10;
+
+// Ujednolicenie produktu z Open Food Facts (różne endpointy zwracają trochę inne pola).
+// incomplete = produkt jest w bazie, ale bez wartości odżywczych.
+const normalizeOff = (p) => {
+  if (!p || typeof p !== 'object') return null;
+  const n = p.nutriments || {};
+  const pick = (...keys) => {
+    for (const k of keys) {
+      const v = offNum(n[k]);
+      if (v !== null) return v;
+    }
+    return null;
+  };
+  const name = String(p.product_name_pl || p.product_name || p.generic_name || '').trim();
+  if (!name) return null;
+  const brandRaw = Array.isArray(p.brands) ? p.brands[0] : String(p.brands || '').split(',')[0];
+  const sq = offNum(p.serving_quantity);
+  const base = {
+    code: String(p.code || p._id || ''),
+    name: name.slice(0, 90),
+    brand: String(brandRaw || '').trim().slice(0, 40),
+    servingG: sq && sq > 0 && sq < 2000 ? Math.round(sq) : null,
+    servingLabel: String(p.serving_size || '').slice(0, 30)
+  };
+  const protein = pick('proteins_100g', 'proteins');
+  const fat = pick('fat_100g', 'fat');
+  const carbs = pick('carbohydrates_100g', 'carbohydrates');
+  let kcal = pick('energy-kcal_100g', 'energy-kcal');
+  if (kcal === null) {
+    const kj = pick('energy-kj_100g', 'energy_100g', 'energy-kj', 'energy');
+    if (kj !== null) kcal = kj / 4.184;
+  }
+  if (kcal === null && (protein !== null || fat !== null || carbs !== null)) kcal = (protein || 0) * 4 + (fat || 0) * 9 + (carbs || 0) * 4;
+  const empty = { ...base, incomplete: true, per100: { kcal: 0, protein: 0, fat: 0, carbs: 0 } };
+  if (kcal === null) return empty;
+  const P = protein || 0;
+  const F = fat || 0;
+  const C = carbs || 0;
+  // oczywiste błędy w bazie (ponad 100 g makro na 100 g, >950 kcal) traktujemy jak brak danych
+  if (kcal < 0 || kcal > 950 || P < 0 || F < 0 || C < 0 || P + F + C > 110) return empty;
+  return { ...base, per100: { kcal: Math.round(kcal), protein: offR1(P), fat: offR1(F), carbs: offR1(C) } };
+};
+
+// Szukanie produktu: najpierw przez nasz serwer (/api/food), a gdy go nie ma albo nie odpowiada – bezpośrednio z przeglądarki.
+const fetchFood = async ({ barcode, q }) => {
+  let why = '';
+  try {
+    const res = await fetch(barcode ? `/api/food?barcode=${barcode}` : `/api/food?q=${encodeURIComponent(q)}`);
+    if (res.ok) {
+      const j = await res.json();
+      if (j && Array.isArray(j.items) && (j.items.length || !j.upstreamFailed)) return { items: j.items, via: 'serwer' };
+      why = 'serwer nie połączył się z Open Food Facts';
+    } else {
+      why = res.status === 404 ? 'na serwerze brakuje pliku api/food.js' : `serwer odpowiedział kodem ${res.status}`;
+    }
+  } catch (_) {
+    why = 'brak połączenia z serwerem';
+  }
+  const get = async (url) => {
+    const c = new AbortController();
+    const t = setTimeout(() => c.abort(), 7000);
+    try {
+      const r = await fetch(url, { signal: c.signal });
+      return r.ok ? await r.json() : null;
+    } catch (_) {
+      return null;
+    } finally {
+      clearTimeout(t);
+    }
+  };
+  if (barcode) {
+    const d = await get(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=${OFF_FIELDS}`);
+    if (d) return { items: d.status === 1 && d.product ? [normalizeOff({ ...d.product, code: barcode })].filter(Boolean) : [], via: 'przeglądarka' };
+  } else {
+    const enc = encodeURIComponent(q);
+    const [a, b] = await Promise.all([
+      get(`https://search.openfoodfacts.org/search?q=${enc}&page_size=20&langs=pl&fields=${OFF_FIELDS}`),
+      get(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${enc}&search_simple=1&action=process&json=1&page_size=20&fields=${OFF_FIELDS}&sort_by=unique_scans_n`)
+    ]);
+    if (a || b) {
+      const seen = new Set();
+      const items = [];
+      [a && a.hits, b && b.products].forEach((list) => (list || []).forEach((p) => {
+        const it = normalizeOff(p);
+        const key = it && (it.code || it.name);
+        if (it && !it.incomplete && !seen.has(key)) { seen.add(key); items.push(it); }
+      }));
+      return { items: items.slice(0, 15), via: 'przeglądarka' };
+    }
+  }
+  return { items: null, why };
+};
+
+// skaner kodów z biblioteki ZXing (ładowanej na żądanie) – działa także w Safari na iPhonie
+let zxingPromise = null;
+const loadZXing = () => {
+  if (typeof window === 'undefined') return Promise.resolve(null);
+  if (window.ZXing) return Promise.resolve(window.ZXing);
+  if (!zxingPromise) {
+    zxingPromise = new Promise((resolve) => {
+      const s = document.createElement('script');
+      s.src = 'https://unpkg.com/@zxing/library@0.21.3';
+      s.async = true;
+      s.onload = () => resolve(window.ZXing || null);
+      s.onerror = () => { zxingPromise = null; resolve(null); };
+      document.head.appendChild(s);
+    });
+  }
+  return zxingPromise;
+};
+const zxingReader = (Z) => {
+  const hints = new Map();
+  hints.set(Z.DecodeHintType.POSSIBLE_FORMATS, [Z.BarcodeFormat.EAN_13, Z.BarcodeFormat.EAN_8, Z.BarcodeFormat.UPC_A, Z.BarcodeFormat.UPC_E]);
+  hints.set(Z.DecodeHintType.TRY_HARDER, true);
+  return new Z.BrowserMultiFormatReader(hints, 300);
+};
+const zxingDecodeFile = async (file) => {
+  try {
+    const Z = await loadZXing();
+    if (!Z) return null;
+    const url = URL.createObjectURL(file);
+    try {
+      const r = await zxingReader(Z).decodeFromImageUrl(url);
+      return r && r.getText ? String(r.getText()) : null;
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  } catch (_) {
+    return null;
+  }
+};
+
 const buildFeed = (players, limit = 14) => {
   const ev = [];
   players.forEach((p) => {
@@ -1751,6 +1892,8 @@ export default function App() {
   const [codeInput, setCodeInput] = useState('');
   const [scanOn, setScanOn] = useState(false);
   const [scanMsg, setScanMsg] = useState('');
+  const [renaming, setRenaming] = useState(false);
+  const [renameVal, setRenameVal] = useState('');
   const [manualForm, setManualForm] = useState({ name: '', kcal: '', protein: '', fat: '', carbs: '' });
   const videoRef = useRef(null);
   const lastMealFile = useRef(null);
@@ -2379,6 +2522,22 @@ export default function App() {
     );
   };
 
+  const startRename = () => {
+    if (isLocked || !activePlayer) return;
+    setRenameVal(activePlayer.name || '');
+    setRenaming(true);
+  };
+  const saveRename = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (isLocked || !activePlayer) return;
+    const nm = renameVal.replace(/\s+/g, ' ').trim().slice(0, 24);
+    if (nm.length < 1) { showToast('Imię nie może być puste.', 'warn'); return; }
+    if (playersRef.current.some((p) => p.id !== activePlayer.id && String(p.name).trim().toLowerCase() === nm.toLowerCase())) { showToast('Ktoś z ekipy ma już takie imię.', 'warn'); return; }
+    setRenaming(false);
+    if (nm === activePlayer.name) return;
+    mutatePlayer(activeId, (p) => ({ ...p, name: nm }), { toastMsg: `Zmieniono imię na ${nm} ✓` });
+  };
+
   const handleCreateDuel = (e) => {
     e.preventDefault();
     if (isLocked || !activePlayer) return;
@@ -2439,15 +2598,18 @@ export default function App() {
     const code = digits.length === 12 ? `0${digits}` : digits;
     setScanOn(false);
     setFoodBusy('Szukam produktu…');
-    let items = null;
-    try {
-      const res = await fetch(`/api/food?barcode=${code}`);
-      if (res.ok) items = (await res.json()).items;
-    } catch (_) {}
+    const r = await fetchFood({ barcode: code });
     setFoodBusy('');
-    if (!items) { showToast('Baza produktów nie odpowiada – spróbuj za chwilę.', 'warn'); return; }
-    if (!items.length) { showToast(`Brak produktu ${code} w bazie – dodaj go ręcznie.`, 'warn'); setFoodMode('manual'); return; }
-    pickProduct(items[0], 'barcode');
+    if (!r.items) { showToast(`Baza produktów nie odpowiada (${r.why}). Dodaj ręcznie albo opisz posiłek słowami.`, 'warn'); setFoodMode('search'); return; }
+    if (!r.items.length) { showToast(`Brak produktu ${code} w bazie – opisz go słowami (AI) albo dodaj ręcznie.`, 'warn'); setFoodMode('search'); return; }
+    const it = r.items[0];
+    if (it.incomplete) {
+      setManualForm({ name: it.name, kcal: '', protein: '', fat: '', carbs: '' });
+      setFoodMode('manual');
+      showToast(`„${it.name}” jest w bazie, ale bez wartości odżywczych – uzupełnij je ręcznie.`, 'warn');
+      return;
+    }
+    pickProduct(it, 'barcode');
   };
   lookupRef.current = lookupBarcode;
   const searchFood = async (e) => {
@@ -2455,14 +2617,28 @@ export default function App() {
     const q = foodQuery.trim();
     if (q.length < 2) return;
     setFoodBusy('Szukam…');
-    let items = null;
-    try {
-      const res = await fetch(`/api/food?q=${encodeURIComponent(q)}`);
-      if (res.ok) items = (await res.json()).items;
-    } catch (_) {}
+    const r = await fetchFood({ q });
     setFoodBusy('');
-    if (!items) { showToast('Baza produktów nie odpowiada – spróbuj za chwilę.', 'warn'); return; }
-    setFoodResults(items);
+    if (!r.items) { showToast(`Baza produktów nie odpowiada (${r.why}) – spróbuj „✨ AI”, które szacuje kalorie z opisu.`, 'warn'); setFoodResults([]); return; }
+    setFoodResults(r.items);
+  };
+  const describeWithAI = async () => {
+    const text = foodQuery.trim();
+    if (text.length < 2) { showToast('Opisz, co zjadłeś, np. „2 jajka i 3 kromki chleba”.', 'warn'); return; }
+    setFoodBusy('AI szacuje kalorie…');
+    let j = null;
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 25000);
+    try {
+      const res = await fetch('/api/meal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: ctrl.signal, body: JSON.stringify({ mode: 'text', text }) });
+      if (res.ok) j = await res.json();
+    } catch (_) {}
+    clearTimeout(t);
+    setFoodBusy('');
+    if (!j) { showToast('AI nie odpowiedziało – spróbuj ponownie albo dodaj ręcznie.', 'warn'); return; }
+    if (!j.isFood) { showToast('Nie rozpoznaję tego jako jedzenia – opisz dokładniej.', 'warn'); return; }
+    setFoodDraft({ src: 'ai', confidence: j.confidence, note: j.note, items: j.items.map((it) => itemFromTotals(it.name, it.grams, it)) });
+    setFoodResults(null);
   };
   const analyzeMealFile = async (file, hint = '') => {
     if (!file) return;
@@ -2500,6 +2676,7 @@ export default function App() {
     setFoodBusy('Czytam kod…');
     let code = null;
     try { code = await detectBarcode(await createImageBitmap(f)); } catch (_) {}
+    if (!code) code = await zxingDecodeFile(f);
     if (!code) {
       try {
         const dataUrl = await shrinkImage(f, 1000, 0.8);
@@ -2508,7 +2685,7 @@ export default function App() {
       } catch (_) {}
     }
     setFoodBusy('');
-    if (!code) { showToast('Nie udało się odczytać kodu – wpisz numer spod pasków.', 'warn'); return; }
+    if (!code) { showToast('Nie udało się odczytać kodu – zrób ostrzejsze zdjęcie samych pasków albo wpisz numer spod nich.', 'warn'); return; }
     setCodeInput(code);
     lookupBarcode(code);
   };
@@ -2517,35 +2694,54 @@ export default function App() {
     if (!scanOn) return undefined;
     let stopped = false;
     let stream = null;
+    let reader = null;
     let timer = 0;
     const stop = () => {
       stopped = true;
       clearTimeout(timer);
       if (stream) stream.getTracks().forEach((t) => t.stop());
+      if (reader) { try { reader.reset(); } catch (_) {} }
     };
+    const fail = (msg) => { setScanMsg(msg); setScanOn(false); };
+    const found = (c) => { stop(); setCodeInput(c); lookupRef.current(c); };
     (async () => {
-      if (!hasBarcodeDetector()) { setScanMsg('Skanowanie na żywo działa w Chrome na Androidzie. Tutaj zrób zdjęcie kodu (AI odczyta numer) albo wpisz go ręcznie.'); setScanOn(false); return; }
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { setScanMsg('Ta przeglądarka nie udostępnia kamery – zrób zdjęcie kodu albo wpisz numer.'); setScanOn(false); return; }
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { fail('Ta przeglądarka nie udostępnia kamery – zrób zdjęcie kodu albo wpisz numer.'); return; }
+      if (hasBarcodeDetector()) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+          if (stopped) { stream.getTracks().forEach((t) => t.stop()); return; }
+          const v = videoRef.current;
+          if (!v) return;
+          v.srcObject = stream;
+          try { await v.play(); } catch (_) {}
+          const det = new window.BarcodeDetector({ formats: BARCODE_FORMATS });
+          const tick = async () => {
+            if (stopped) return;
+            try {
+              const r = await det.detect(v);
+              if (r && r[0] && r[0].rawValue) { found(String(r[0].rawValue)); return; }
+            } catch (_) {}
+            timer = setTimeout(tick, 250);
+          };
+          tick();
+        } catch (_) {
+          fail('Brak dostępu do kamery – zezwól na kamerę w przeglądarce albo zrób zdjęcie kodu / wpisz numer.');
+        }
+        return;
+      }
+      // przeglądarki bez BarcodeDetector (np. Safari na iPhonie) – biblioteka ZXing
+      const Z = await loadZXing();
+      if (stopped) return;
+      if (!Z) { fail('Nie udało się załadować skanera – zrób zdjęcie kodu (AI odczyta numer) albo wpisz go ręcznie.'); return; }
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
-        if (stopped) { stream.getTracks().forEach((t) => t.stop()); return; }
         const v = videoRef.current;
         if (!v) return;
-        v.srcObject = stream;
-        try { await v.play(); } catch (_) {}
-        const det = new window.BarcodeDetector({ formats: BARCODE_FORMATS });
-        const tick = async () => {
-          if (stopped) return;
-          try {
-            const r = await det.detect(v);
-            if (r && r[0] && r[0].rawValue) { const c = String(r[0].rawValue); stop(); setCodeInput(c); lookupRef.current(c); return; }
-          } catch (_) {}
-          timer = setTimeout(tick, 250);
-        };
-        tick();
+        reader = zxingReader(Z);
+        const cb = (res) => { if (res && !stopped) found(String(res.getText())); };
+        if (reader.decodeFromConstraints) await reader.decodeFromConstraints({ video: { facingMode: 'environment' }, audio: false }, v, cb);
+        else await reader.decodeFromVideoDevice(null, v, cb);
       } catch (_) {
-        setScanMsg('Brak dostępu do kamery – zrób zdjęcie kodu albo wpisz numer.');
-        setScanOn(false);
+        fail('Brak dostępu do kamery – zezwól na kamerę w przeglądarce albo zrób zdjęcie kodu / wpisz numer.');
       }
     })();
     return stop;
@@ -3147,12 +3343,23 @@ export default function App() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="text-[11px] font-black tracking-[.22em] ia-accent uppercase">Miejsce #{ovrRank[currentEnriched.id]} w arenie • {currentEnriched.goal}</div>
-                  <h2 className="ia-big text-4xl sm:text-6xl font-black uppercase leading-[.95] mt-1.5 truncate">{currentEnriched.name}</h2>
+                  {renaming ? (
+                    <form onSubmit={saveRename} className="flex items-center gap-2 mt-1.5" data-testid="rename-form">
+                      <input autoFocus maxLength={24} value={renameVal} onChange={(e) => setRenameVal(e.target.value)} onKeyDown={(e) => { if (e.key === 'Escape') setRenaming(false); }} className="ia-input text-xl font-black min-w-0" data-testid="rename-input" aria-label="Nowe imię" />
+                      <button type="submit" className="ia-btn ia-accent-bg shrink-0" data-testid="rename-save">Zapisz</button>
+                      <button type="button" onClick={() => setRenaming(false)} className="ia-btn ia-ghost shrink-0" data-testid="rename-cancel">Anuluj</button>
+                    </form>
+                  ) : (
+                    <h2 className="ia-big text-4xl sm:text-6xl font-black uppercase leading-[.95] mt-1.5 truncate">{currentEnriched.name}</h2>
+                  )}
                   <div className="flex flex-wrap items-center gap-2 mt-3 text-[11px] font-bold">
                     <span className="px-2.5 py-1 rounded-full bg-white/8 border border-white/10">🏆 {currentEnriched.prTotal} {currentEnriched.prTotal === 1 ? 'rekord' : 'rekordów'}</span>
                     <span className="px-2.5 py-1 rounded-full bg-white/8 border border-white/10">⚡ {currentEnriched.season.pts} pkt w sezonie</span>
                     <span className="px-2.5 py-1 rounded-full bg-white/8 border border-white/10">⚔️ pojedynki {currentEnriched.duelW}–{currentEnriched.duelL}</span>
                     <span className="px-2.5 py-1 rounded-full bg-white/8 border border-white/10">📈 progres {fmtSigned(currentEnriched.prog.pts, 1)}</span>
+                    {!isLocked && !renaming && (
+                      <button type="button" onClick={startRename} className="text-[11px] ia-faint hover:text-white underline underline-offset-2" data-testid="rename-start">✎ zmień imię</button>
+                    )}
                     {currentEnriched.avatar && !isLocked && (
                       <button type="button" onClick={handleRemoveAvatar} className="text-[11px] ia-faint hover:text-white underline underline-offset-2">usuń zdjęcie profilowe</button>
                     )}
@@ -3840,8 +4047,8 @@ export default function App() {
                       </button>
                       <button type="button" onClick={() => { setFoodDraft(null); setFoodMode('search'); }} className={`ia-sub rounded-2xl p-3 flex flex-col items-center gap-1.5 text-center hover:border-white/25 ${foodMode === 'search' ? 'ia-soft' : ''}`} data-testid="mode-search">
                         <Icon name="search" className="w-5 h-5 ia-accent" />
-                        <span className="text-[11px] font-black">Szukaj produktu</span>
-                        <span className="text-[10px] ia-faint leading-tight">baza produktów</span>
+                        <span className="text-[11px] font-black">Szukaj / opisz</span>
+                        <span className="text-[10px] ia-faint leading-tight">baza lub AI</span>
                       </button>
                       <button type="button" onClick={() => { setFoodDraft(null); setFoodMode('manual'); }} className={`ia-sub rounded-2xl p-3 flex flex-col items-center gap-1.5 text-center hover:border-white/25 ${foodMode === 'manual' ? 'ia-soft' : ''}`} data-testid="mode-manual">
                         <Icon name="plus" className="w-5 h-5 ia-accent" />
@@ -3881,10 +4088,16 @@ export default function App() {
                     {foodMode === 'search' && !foodDraft && (
                       <div className="space-y-3 ia-fade" data-testid="search-panel">
                         <form onSubmit={searchFood} className="flex gap-2">
-                          <input type="text" autoComplete="off" placeholder="Np. jogurt naturalny, Snickers, ryż basmati…" value={foodQuery} onChange={(e) => setFoodQuery(e.target.value)} className="ia-input" data-testid="food-search-input" />
+                          <input type="text" autoComplete="off" placeholder="Produkt (jogurt Bakoma) albo opis (kebab w bułce, 2 jajka…)" value={foodQuery} onChange={(e) => setFoodQuery(e.target.value)} className="ia-input" data-testid="food-search-input" />
                           <button type="submit" className="ia-btn ia-accent-bg shrink-0" data-testid="food-search-go">Szukaj</button>
+                          <button type="button" onClick={describeWithAI} disabled={Boolean(foodBusy)} className="ia-btn ia-ghost shrink-0" data-testid="food-ai-text" title="AI oszacuje kalorie z opisu">✨ AI</button>
                         </form>
-                        {foodResults && foodResults.length === 0 && <p className="text-xs ia-muted">Nic nie znaleziono. Spróbuj prostszej nazwy albo dodaj ręcznie.</p>}
+                        {foodResults && foodResults.length === 0 && (
+                          <div className="space-y-2" data-testid="food-noresults">
+                            <p className="text-xs ia-muted">Baza niczego nie znalazła. Kliknij „✨ AI”, a oszacuje kalorie z tego, co wpisałeś (podaj gramy lub sztuki), albo dodaj ręcznie.</p>
+                            <button type="button" onClick={describeWithAI} disabled={Boolean(foodBusy)} className="ia-btn ia-accent-bg w-full" data-testid="food-ai-cta">✨ Oszacuj kalorie przez AI</button>
+                          </div>
+                        )}
                         {foodResults && foodResults.length > 0 && (
                           <div className="space-y-1.5 max-h-72 overflow-y-auto ia-scroll">
                             {foodResults.map((r) => (
@@ -3914,9 +4127,9 @@ export default function App() {
                         <div className="flex items-start gap-3">
                           {foodDraft.preview && <img src={foodDraft.preview} alt="Zdjęcie posiłku" className="w-16 h-16 rounded-xl object-cover shrink-0" />}
                           <div className="min-w-0 flex-1">
-                            <div className="text-[10px] font-black uppercase tracking-wide">{{ photo: '📸 Szacunek AI ze zdjęcia', barcode: '▮▮ Produkt z kodu kreskowego', search: '🔍 Produkt z bazy', manual: '✍️ Wpis ręczny' }[foodDraft.src]}</div>
+                            <div className="text-[10px] font-black uppercase tracking-wide">{{ photo: '📸 Szacunek AI ze zdjęcia', ai: '✨ Szacunek AI z opisu', barcode: '▮▮ Produkt z kodu kreskowego', search: '🔍 Produkt z bazy', manual: '✍️ Wpis ręczny' }[foodDraft.src]}</div>
                             {foodDraft.brand && <div className="text-[11px] ia-muted truncate">{foodDraft.brand}</div>}
-                            {foodDraft.src === 'photo' && <div className="text-[11px] ia-muted mt-0.5">Pewność: <strong className="text-white">{foodDraft.confidence}</strong>{foodDraft.note ? ` • ${foodDraft.note}` : ''}</div>}
+                            {(foodDraft.src === 'photo' || foodDraft.src === 'ai') && <div className="text-[11px] ia-muted mt-0.5">Pewność: <strong className="text-white">{foodDraft.confidence}</strong>{foodDraft.note ? ` • ${foodDraft.note}` : ''}</div>}
                           </div>
                         </div>
                         <div className="space-y-2">
@@ -3980,7 +4193,7 @@ export default function App() {
                           <div key={m.id} className="ia-sub rounded-xl px-3 py-2 flex items-center justify-between gap-2 text-xs" data-testid="meal-row">
                             <div className="min-w-0">
                               <div className="font-bold truncate">{m.name}</div>
-                              <div className="text-[10px] ia-faint">{m.grams ? `${m.grams} g • ` : ''}B {m.protein} T {m.fat} W {m.carbs}{{ photo: ' • 📸', barcode: ' • ▮▮', search: ' • 🔍' }[m.src] || ''}</div>
+                              <div className="text-[10px] ia-faint">{m.grams ? `${m.grams} g • ` : ''}B {m.protein} T {m.fat} W {m.carbs}{{ photo: ' • 📸', ai: ' • ✨', barcode: ' • ▮▮', search: ' • 🔍' }[m.src] || ''}</div>
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
                               <span className="font-black ia-accent tabular-nums">{m.kcal} kcal</span>
