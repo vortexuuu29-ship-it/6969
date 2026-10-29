@@ -1,46 +1,70 @@
 // Wyszukiwanie produktów spożywczych w Open Food Facts (darmowa, otwarta baza – bez klucza).
-// GET /api/food?barcode=5900334001113   lub   GET /api/food?q=jogurt naturalny
+// GET /api/food?barcode=5901234123457   lub   GET /api/food?q=jogurt naturalny
+// Odpowiedź: { items: [...], upstreamFailed: true|false }
+// upstreamFailed = żaden z serwerów Open Food Facts nie odpowiedział (wtedy aplikacja próbuje bezpośrednio z przeglądarki).
 const UA = 'TRENdowaci/1.0 (prywatna aplikacja ekipy treningowej)';
-const FIELDS = 'code,product_name,product_name_pl,generic_name,brands,nutriments,serving_size,serving_quantity';
 
-const num = (v) => {
-  const n = Number(String(v ?? '').replace(',', '.'));
+const OFF_FIELDS = 'code,product_name,product_name_pl,generic_name,brands,nutriments,serving_size,serving_quantity';
+
+const offNum = (v) => {
+  if (v === null || v === undefined || v === '') return null;
+  const n = Number(String(v).replace(',', '.'));
   return Number.isFinite(n) ? n : null;
 };
-const r1 = (v) => Math.round(v * 10) / 10;
+const offR1 = (v) => Math.round(v * 10) / 10;
 
-const normalize = (p) => {
+// Ujednolicenie produktu z Open Food Facts (różne endpointy zwracają trochę inne pola).
+// incomplete = produkt jest w bazie, ale bez wartości odżywczych.
+const normalizeOff = (p) => {
+  if (!p || typeof p !== 'object') return null;
   const n = p.nutriments || {};
-  let kcal = num(n['energy-kcal_100g']);
-  if (kcal === null) {
-    const kj = num(n.energy_100g);
-    if (kj !== null) kcal = kj / 4.184;
-  }
+  const pick = (...keys) => {
+    for (const k of keys) {
+      const v = offNum(n[k]);
+      if (v !== null) return v;
+    }
+    return null;
+  };
   const name = String(p.product_name_pl || p.product_name || p.generic_name || '').trim();
-  if (kcal === null || !name) return null;
-  const protein = num(n.proteins_100g) ?? 0;
-  const fat = num(n.fat_100g) ?? 0;
-  const carbs = num(n.carbohydrates_100g) ?? 0;
-  // odrzucamy oczywiste błędy w bazie (więcej niż 100 g makro na 100 g albo >950 kcal)
-  if (kcal < 0 || kcal > 950 || protein < 0 || fat < 0 || carbs < 0 || protein + fat + carbs > 110) return null;
-  const sq = num(p.serving_quantity);
-  return {
-    code: String(p.code || ''),
+  if (!name) return null;
+  const brandRaw = Array.isArray(p.brands) ? p.brands[0] : String(p.brands || '').split(',')[0];
+  const sq = offNum(p.serving_quantity);
+  const base = {
+    code: String(p.code || p._id || ''),
     name: name.slice(0, 90),
-    brand: String(p.brands || '').split(',')[0].trim().slice(0, 40),
-    per100: { kcal: Math.round(kcal), protein: r1(protein), fat: r1(fat), carbs: r1(carbs) },
+    brand: String(brandRaw || '').trim().slice(0, 40),
     servingG: sq && sq > 0 && sq < 2000 ? Math.round(sq) : null,
     servingLabel: String(p.serving_size || '').slice(0, 30)
   };
+  const protein = pick('proteins_100g', 'proteins');
+  const fat = pick('fat_100g', 'fat');
+  const carbs = pick('carbohydrates_100g', 'carbohydrates');
+  let kcal = pick('energy-kcal_100g', 'energy-kcal');
+  if (kcal === null) {
+    const kj = pick('energy-kj_100g', 'energy_100g', 'energy-kj', 'energy');
+    if (kj !== null) kcal = kj / 4.184;
+  }
+  if (kcal === null && (protein !== null || fat !== null || carbs !== null)) kcal = (protein || 0) * 4 + (fat || 0) * 9 + (carbs || 0) * 4;
+  const empty = { ...base, incomplete: true, per100: { kcal: 0, protein: 0, fat: 0, carbs: 0 } };
+  if (kcal === null) return empty;
+  const P = protein || 0;
+  const F = fat || 0;
+  const C = carbs || 0;
+  // oczywiste błędy w bazie (ponad 100 g makro na 100 g, >950 kcal) traktujemy jak brak danych
+  if (kcal < 0 || kcal > 950 || P < 0 || F < 0 || C < 0 || P + F + C > 110) return empty;
+  return { ...base, per100: { kcal: Math.round(kcal), protein: offR1(P), fat: offR1(F), carbs: offR1(C) } };
 };
 
-const getJson = async (url) => {
+// pojedyncze zapytanie z limitem czasu; null = błąd sieci/serwera (inaczej niż pusty wynik)
+const getJson = async (url, ms = 5000) => {
   const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 9000);
+  const t = setTimeout(() => ctrl.abort(), ms);
   try {
     const res = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'application/json' }, signal: ctrl.signal });
     if (!res.ok) return null;
     return await res.json();
+  } catch (_) {
+    return null;
   } finally {
     clearTimeout(t);
   }
@@ -49,36 +73,50 @@ const getJson = async (url) => {
 module.exports = async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Dozwolona tylko metoda GET' });
   try {
-    const barcode = String(req.query?.barcode || '').trim();
-    const q = String(req.query?.q || '').trim();
+    const barcode = String((req.query && req.query.barcode) || '').trim();
+    const q = String((req.query && req.query.q) || '').trim();
 
     if (barcode) {
       if (!/^\d{8,14}$/.test(barcode)) return res.status(400).json({ error: 'Nieprawidłowy kod kreskowy' });
-      const data = await getJson(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=${FIELDS}`);
-      const item = data && data.status === 1 && data.product ? normalize({ ...data.product, code: barcode }) : null;
-      res.setHeader('Cache-Control', 's-maxage=86400, stale-while-revalidate');
-      return res.status(200).json({ items: item ? [item] : [] });
+      // dwa adresy równolegle – wygrywa pierwszy, który coś znajdzie
+      const urls = [
+        `https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=${OFF_FIELDS}`,
+        `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`
+      ];
+      const results = await Promise.all(urls.map((u) => getJson(u, 6000)));
+      const answered = results.filter(Boolean);
+      const found = answered.map((d) => (d.status === 1 && d.product ? normalizeOff({ ...d.product, code: barcode }) : null)).find(Boolean);
+      if (answered.length) res.setHeader('Cache-Control', 's-maxage=86400, stale-while-revalidate');
+      return res.status(200).json({ items: found ? [found] : [], upstreamFailed: answered.length === 0 });
     }
 
     if (q.length >= 2 && q.length <= 60) {
-      const base = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=20&fields=${FIELDS}&sort_by=unique_scans_n`;
-      // najpierw produkty sprzedawane w Polsce, a jeśli jest ich mało – cała baza
-      let list = [];
-      const pl = await getJson(`${base}&tagtype_0=countries&tag_contains_0=contains&tag_0=poland`);
-      list = (pl?.products || []).map(normalize).filter(Boolean);
-      if (list.length < 4) {
-        const all = await getJson(base);
-        const more = (all?.products || []).map(normalize).filter(Boolean);
-        const seen = new Set(list.map((x) => x.code));
-        more.forEach((x) => { if (!seen.has(x.code)) list.push(x); });
-      }
-      res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate');
-      return res.status(200).json({ items: list.slice(0, 12) });
+      const enc = encodeURIComponent(q);
+      const legacy = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${enc}&search_simple=1&action=process&json=1&page_size=20&fields=${OFF_FIELDS}&sort_by=unique_scans_n&tagtype_0=countries&tag_contains_0=contains&tag_0=poland`;
+      const legacyAll = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${enc}&search_simple=1&action=process&json=1&page_size=20&fields=${OFF_FIELDS}&sort_by=unique_scans_n`;
+      const modern = `https://search.openfoodfacts.org/search?q=${enc}&page_size=20&langs=pl&fields=${OFF_FIELDS}`;
+      // trzy źródła równolegle (najwolniejsze obcinamy po kilku sekundach, bo Vercel ma limit czasu funkcji)
+      const [a, b, c] = await Promise.all([getJson(modern, 6000), getJson(legacy, 6500), getJson(legacyAll, 6500)]);
+      const answered = [a, b, c].filter(Boolean);
+      const seen = new Set();
+      const items = [];
+      [a?.hits, b?.products, c?.products].forEach((list) => {
+        (list || []).forEach((p) => {
+          const it = normalizeOff(p);
+          if (!it || it.incomplete) return;
+          const key = it.code || it.name;
+          if (seen.has(key)) return;
+          seen.add(key);
+          items.push(it);
+        });
+      });
+      if (answered.length) res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate');
+      return res.status(200).json({ items: items.slice(0, 15), upstreamFailed: answered.length === 0 });
     }
 
     return res.status(400).json({ error: 'Podaj barcode albo q (min. 2 znaki)' });
   } catch (err) {
     console.error('Błąd w /api/food:', err);
-    return res.status(502).json({ error: 'Baza produktów nie odpowiada' });
+    return res.status(200).json({ items: [], upstreamFailed: true });
   }
 };
