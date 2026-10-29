@@ -163,6 +163,8 @@ select.ia-input option{background:#18181b;color:#fff}
 .ia-tab.on{background:rgb(var(--ac)/.14);color:rgb(var(--ac));box-shadow:inset 0 0 0 1px rgb(var(--ac)/.35)}
 .ia-nav-m{position:fixed;left:10px;right:10px;bottom:10px;z-index:40;border-radius:1.4rem;display:flex;padding:6px;gap:2px}
 .ia-nav-m button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:.45rem 0;border-radius:1rem;font-size:.6rem;font-weight:800;color:rgba(244,244,245,.5);transition:all .25s}
+.ia-root button,.ia-root a,.ia-root label,.ia-root summary{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.ia-nav-m button{min-height:50px;justify-content:center}
 .ia-nav-m button.on{background:rgb(var(--ac)/.15);color:rgb(var(--ac))}
 .ia-chip{display:inline-flex;align-items:center;gap:.45rem;padding:.3rem .8rem .3rem .35rem;border-radius:9999px;font-size:.76rem;font-weight:800;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);color:rgba(244,244,245,.75);transition:all .25s;white-space:nowrap;flex-shrink:0}
 .ia-chip:hover{border-color:rgb(var(--ac)/.5);color:#fff}
@@ -2049,6 +2051,7 @@ export default function App() {
     } catch (_) {}
   }, []);
   useEffect(() => { setPinMode(null); setPinA(''); setPinB(''); setPinErr(''); setStarForm(null); }, [activeId]);
+  useEffect(() => { try { window.scrollTo(0, 0); } catch (_) {} }, [activeTab]);
   useEffect(() => { if (!players.some((p) => p.id === activeId) && players[0]) setActiveId(players[0].id); }, [players, activeId]);
 
   // 1) ZAWSZE zapisuj do pamięci przeglądarki (dane przeżywają odświeżenie nawet bez chmury)
@@ -3149,9 +3152,10 @@ export default function App() {
     if (pinnedId === idToDelete) setPinnedId('');
   };
 
+  const homeTab = activeTab === 'ai_physique';
   const changeTab = (id) => {
     setActiveTab(id);
-    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (_) {}
+    try { window.scrollTo(0, 0); } catch (_) {}
   };
 
   const syncMeta = SYNC_META[sync.kind] || SYNC_META.local;
@@ -3457,8 +3461,22 @@ export default function App() {
 
         <main className="max-w-7xl mx-auto px-4 pt-5 space-y-5">
           {/* ------------------------------ HERO ------------------------------ */}
+          {currentEnriched && !homeTab && (
+            <section className="md:hidden ia-glass ia-card px-4 py-3 flex items-center gap-3 ia-up" data-testid="hero-compact">
+              <div className="ia-av-ring shrink-0"><Avatar name={currentEnriched.name} src={currentEnriched.avatar} size={44} /></div>
+              <div className="min-w-0 flex-1">
+                <div className="ia-big text-lg font-black uppercase leading-none truncate">{currentEnriched.name}</div>
+                <div className="text-[11px] ia-muted mt-1">Miejsce #{ovrRank[currentEnriched.id]} • OVR <strong className="text-white">{currentEnriched.ovr}</strong> • {currentEnriched.currentWeight} kg</div>
+              </div>
+              {pinLocked && !otherPinned ? (
+                <button type="button" onClick={() => { changeTab('ai_physique'); openPin('unlock'); }} className="ia-btn ia-accent-bg !py-1.5 !px-3 text-[11px] shrink-0" data-testid="pin-unlock-compact">🔒 Odblokuj</button>
+              ) : (
+                <button type="button" onClick={() => changeTab('ai_physique')} className="ia-btn ia-ghost !py-1.5 !px-3 text-[11px] shrink-0" data-testid="to-profile">Profil</button>
+              )}
+            </section>
+          )}
           {currentEnriched && (
-            <section className="ia-hero ia-cine p-5 sm:p-7" data-testid="hero">
+            <section className={`ia-hero ia-cine p-5 sm:p-7 ${homeTab ? '' : 'hidden md:block'}`} data-testid="hero">
               {!theme.photo && <div className="ia-wm" aria-hidden="true">TREN</div>}
               <div className="relative z-10 flex flex-col sm:flex-row sm:items-center gap-5">
                 <div className="relative shrink-0 self-start">
@@ -3550,7 +3568,7 @@ export default function App() {
 
           {/* ------------------------- PASEK STATYSTYK AKTYWNEGO ------------------------- */}
           {currentEnriched && (
-            <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <section className={`${homeTab ? 'grid' : 'hidden md:grid'} grid-cols-2 lg:grid-cols-4 gap-3`}>
               <div className="ia-glass ia-card p-4 col-span-2 lg:col-span-1 ia-up">
                 <div className="flex items-center justify-between">
                   <span className={`px-2 py-0.5 rounded-md text-[11px] font-black border ${getGoalBadgeStyle(currentEnriched.goal)}`}>{currentEnriched.goal}</span>
