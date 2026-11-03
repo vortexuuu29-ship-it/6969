@@ -106,7 +106,7 @@ const FONT = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif
 
 /* ----------------------------------- CSS ----------------------------------- */
 const STYLES = `
-.ia-root{min-height:100vh;background:#09090b;color:#f4f4f5;position:relative;overflow-x:hidden;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+.ia-root{--ease:cubic-bezier(.2,0,0,1);--dur:200ms;min-height:100vh;background:#09090b;color:#f4f4f5;position:relative;overflow-x:hidden;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 .ia-aurora{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
 .ia-photo{position:absolute;inset:0;background:url(${KINO_BG}) center 18%/cover no-repeat;opacity:.72}
 .ia-photo::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(9,9,11,.22) 0%,rgba(9,9,11,.5) 50%,rgba(9,9,11,.86) 100%),radial-gradient(ellipse at 50% 30%,transparent 40%,rgba(9,9,11,.5) 100%)}
@@ -124,17 +124,17 @@ const STYLES = `
 .ia-card{position:relative;border-radius:1.25rem;transition:transform .3s cubic-bezier(.2,.8,.2,1),border-color .3s,box-shadow .3s}
 .ia-lift:hover{transform:translateY(-3px);border-color:rgb(var(--ac)/.35);box-shadow:0 20px 44px -18px rgb(var(--ac)/.4)}
 .ia-sub{background:rgba(0,0,0,.32);border:1px solid rgba(255,255,255,.07);transition:border-color .2s,background .2s,transform .2s}
-.ia-muted{color:rgba(244,244,245,.56)}
-.ia-faint{color:rgba(244,244,245,.38)}
+.ia-muted{color:rgba(244,244,245,.66)}
+.ia-faint{color:rgba(244,244,245,.52)}
 .ia-accent{color:rgb(var(--ac));transition:color .4s}
 .ia-accent-bg{background:rgb(var(--ac));color:rgb(var(--on));transition:background .4s,color .4s,transform .15s,box-shadow .25s,filter .2s}
 .ia-accent-bg:hover{filter:brightness(1.08);box-shadow:0 10px 28px -10px rgb(var(--ac)/.8)}
 .ia-grad{background:linear-gradient(135deg,rgb(var(--ac)),rgb(var(--ac2)));color:rgb(var(--on))}
 .ia-grad-text{background:linear-gradient(135deg,rgb(var(--ac)),rgb(var(--ac2)));-webkit-background-clip:text;background-clip:text;color:transparent}
-.ia-soft{background:rgb(var(--ac)/.10);border:1px solid rgb(var(--ac)/.32);color:rgb(var(--ac));transition:all .3s}
+.ia-soft{background:rgb(var(--ac)/.10);border:1px solid rgb(var(--ac)/.32);color:rgb(var(--ac));transition-property:background-color,border-color,color,box-shadow;transition-duration:.3s;transition-timing-function:var(--ease)}
 
-.ia-btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;padding:.55rem .95rem;border-radius:.8rem;font-weight:800;font-size:.78rem;cursor:pointer;transition:all .2s;white-space:nowrap}
-.ia-btn:active{transform:scale(.95)}
+.ia-btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;padding:.55rem .95rem;border-radius:.8rem;font-weight:800;font-size:.78rem;cursor:pointer;transition-property:scale,background-color,border-color,color,box-shadow,opacity,filter;transition-duration:var(--dur);transition-timing-function:var(--ease);white-space:nowrap}
+.ia-btn:active:not(:disabled){scale:.96}
 .ia-btn:disabled{opacity:.4;cursor:not-allowed;filter:none;box-shadow:none}
 .ia-ghost{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);color:#e4e4e7}
 .ia-ghost:hover{border-color:rgb(var(--ac)/.55);background:rgba(255,255,255,.075)}
@@ -152,20 +152,33 @@ select.ia-input option{background:#18181b;color:#fff}
 .ia-range::-moz-range-thumb{width:16px;height:16px;border-radius:9999px;background:rgb(var(--ac));border:4px solid #09090b;box-shadow:0 0 0 2px rgb(var(--ac)/.55)}
 
 .ia-seg{display:flex;padding:3px;border-radius:.9rem;background:rgba(0,0,0,.38);border:1px solid rgba(255,255,255,.08);gap:2px}
-.ia-seg button{flex:1;padding:.45rem .75rem;border-radius:.7rem;font-size:.74rem;font-weight:800;color:rgba(244,244,245,.6);transition:all .25s;white-space:nowrap}
+.ia-seg button{flex:1;padding:.45rem .75rem;border-radius:.7rem;font-size:.74rem;font-weight:800;color:rgba(244,244,245,.6);transition-property:scale,background-color,color,box-shadow;transition-duration:var(--dur);transition-timing-function:var(--ease);white-space:nowrap}
+.ia-seg button:active{scale:.96}
 .ia-seg button:hover{color:#fff}
+@media (max-width:639px){.ia-seg-wrap{display:grid;grid-template-columns:1fr 1fr}.ia-seg-wrap button{padding:.6rem .5rem;min-height:44px}}
 .ia-seg button.on{background:rgb(var(--ac));color:rgb(var(--on));box-shadow:0 6px 16px -8px rgb(var(--ac)/.9)}
 
 
 .ia-header{background:rgba(9,9,11,.62);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.07)}
-.ia-tab{padding:.5rem .9rem;border-radius:.9rem;font-weight:800;font-size:.76rem;color:rgba(244,244,245,.6);transition:all .25s;display:flex;gap:.45rem;align-items:center;white-space:nowrap}
+.ia-tab{padding:.5rem .9rem;border-radius:.9rem;font-weight:800;font-size:.76rem;color:rgba(244,244,245,.6);transition-property:scale,background-color,color,box-shadow;transition-duration:var(--dur);transition-timing-function:var(--ease);display:flex;gap:.45rem;align-items:center;white-space:nowrap}
+.ia-tab:active{scale:.96}
 .ia-tab:hover{color:#fff;background:rgba(255,255,255,.05)}
 .ia-tab.on{background:rgb(var(--ac)/.14);color:rgb(var(--ac));box-shadow:inset 0 0 0 1px rgb(var(--ac)/.35)}
+.ia-slot{position:relative;display:block;aspect-ratio:3/4;border:2px dashed rgba(255,255,255,.16);border-radius:1rem;overflow:hidden;cursor:pointer;background:rgba(255,255,255,.03);transition-property:border-color,background-color,scale;transition-duration:.18s;transition-timing-function:cubic-bezier(.2,0,0,1)}
+.ia-slot:hover{border-color:rgb(var(--ac)/.7)}
+.ia-slot:active{scale:.96}
+.ia-slot.filled{border-style:solid;border-color:rgb(var(--ac)/.55)}
+.ia-slot img{width:100%;height:100%;object-fit:cover;display:block}
+.ia-slot-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:rgba(244,244,245,.55)}
+.ia-slot-tag{position:absolute;left:6px;bottom:6px;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:800;background:rgba(0,0,0,.7);color:#fff;backdrop-filter:blur(6px)}
+.ia-slot-x{position:absolute;top:5px;right:5px;width:26px;height:26px;border-radius:9999px;background:rgba(0,0,0,.72);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center}
 .ia-nav-m{position:fixed;left:10px;right:10px;bottom:10px;z-index:40;border-radius:1.4rem;display:flex;padding:6px;gap:2px}
-.ia-nav-m button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:.45rem 0;border-radius:1rem;font-size:.6rem;font-weight:800;color:rgba(244,244,245,.5);transition:all .25s}
+.ia-nav-m button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:.45rem 0;border-radius:1rem;font-size:.6rem;font-weight:800;color:rgba(244,244,245,.5);transition-property:scale,background-color,color;transition-duration:var(--dur);transition-timing-function:var(--ease)}
+.ia-nav-m button:active{scale:.96}
 .ia-root button,.ia-root a,.ia-root label,.ia-root summary{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .ia-nav-m button{min-height:50px;justify-content:center}
 .ia-nav-m button.on{background:rgb(var(--ac)/.15);color:rgb(var(--ac))}
+@media (min-width:768px){.ia-nav-m{display:none}}
 .ia-chip{display:inline-flex;align-items:center;gap:.45rem;padding:.3rem .8rem .3rem .35rem;border-radius:9999px;font-size:.76rem;font-weight:800;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);color:rgba(244,244,245,.75);transition:all .25s;white-space:nowrap;flex-shrink:0}
 .ia-chip:hover{border-color:rgb(var(--ac)/.5);color:#fff}
 .ia-chip.on{background:rgb(var(--ac)/.15);border-color:rgb(var(--ac)/.55);color:rgb(var(--ac))}
@@ -175,7 +188,8 @@ select.ia-input option{background:#18181b;color:#fff}
 .ia-toast{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:80;padding:.6rem 1rem;border-radius:9999px;font-size:.78rem;font-weight:800;animation:ia-drop .4s cubic-bezier(.2,.9,.3,1.2) both;max-width:92vw;text-align:center}
 
 @keyframes ia-float{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(46px,34px,0) scale(1.1)}}
-@keyframes ia-up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes ia-up{from{opacity:0;transform:translateY(12px);filter:blur(4px)}to{opacity:1;transform:none;filter:blur(0)}}
+@keyframes ia-shot{from{opacity:0;scale:.98}to{opacity:1;scale:1}}
 @keyframes ia-fade{from{opacity:0}to{opacity:1}}
 @keyframes ia-pop{from{opacity:0;transform:scale(.94) translateY(10px)}to{opacity:1;transform:none}}
 @keyframes ia-drop{from{opacity:0;transform:translate(-50%,-14px)}to{opacity:1;transform:translate(-50%,0)}}
@@ -186,7 +200,11 @@ select.ia-input option{background:#18181b;color:#fff}
 @keyframes ia-bump{0%{transform:scale(1)}40%{transform:scale(1.28)}100%{transform:scale(1)}}
 @keyframes ia-draw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
 @keyframes ia-shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
-.ia-up{animation:ia-up .55s cubic-bezier(.2,.8,.2,1) both}
+.ia-up{animation:ia-up .45s var(--ease) both}
+.ia-up:nth-child(2){animation-delay:80ms}.ia-up:nth-child(3){animation-delay:160ms}.ia-up:nth-child(4){animation-delay:240ms}.ia-up:nth-child(5){animation-delay:320ms}.ia-up:nth-child(n+6){animation-delay:400ms}
+.ia-shot{animation:ia-shot .28s var(--ease) both}
+[data-testid=set-summary] li{animation:ia-up .4s var(--ease) both}
+[data-testid=set-summary] li:nth-child(2){animation-delay:80ms}[data-testid=set-summary] li:nth-child(3){animation-delay:160ms}[data-testid=set-summary] li:nth-child(4){animation-delay:240ms}
 .ia-fade{animation:ia-fade .3s ease both}
 .ia-pop{animation:ia-pop .4s cubic-bezier(.2,.9,.3,1.1) both}
 .ia-sl{animation:ia-sl .4s cubic-bezier(.2,.8,.2,1) both}
@@ -240,6 +258,7 @@ select.ia-input option{background:#18181b;color:#fff}
 .ia-splash-kicker{position:relative;font-size:.7rem;font-weight:800;letter-spacing:.4em;color:rgba(244,244,245,.55);animation:ia-fade 1s ease .1s both}
 .ia-splash-bar{position:relative;height:2px;background:linear-gradient(90deg,transparent,rgb(var(--ac)),transparent);animation:ia-bar 1.3s cubic-bezier(.2,.8,.2,1) .35s both}
 .ia-splash-sub{position:relative;font-size:.78rem;font-weight:700;color:rgba(244,244,245,.5);animation:ia-fade 1s ease .9s both}
+@media (max-width:639px){.ia-root .text-\\[10px\\]{font-size:11px}}
 @media (prefers-reduced-motion:reduce){.ia-root *{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}.ia-splash,.ia-grain{display:none !important}}
 `;
 
@@ -398,6 +417,55 @@ const VerdictList = ({ verdict, compact }) => (
     ))}
   </div>
 );
+
+const SetSummary = ({ ai, verdict, compact }) => {
+  const views = ai && ai.views ? SHOT_VIEWS.filter((v) => ai.views[v.id]) : [];
+  const strengths = (ai && ai.strengths) || [];
+  const weaknesses = (ai && ai.weaknesses) || [];
+  const structured = strengths.length > 0 || weaknesses.length > 0;
+  return (
+    <div className={compact ? 'space-y-2.5' : 'space-y-3'} data-testid="set-summary">
+      {views.length > 1 && (
+        <div className="grid grid-cols-3 gap-1.5" data-testid="view-scores">
+          {views.map((v) => (
+            <div key={v.id} className="ia-tile !p-2 text-center">
+              <div className="text-[10px] ia-muted font-bold">{v.label}</div>
+              <div className="ia-big text-lg font-black tabular-nums leading-tight">{Number(ai.views[v.id].overall).toFixed(1)}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      {structured ? (
+        <div className="space-y-2.5">
+          {strengths.length > 0 && (
+            <div data-testid="strengths">
+              <div className="text-[10px] font-black uppercase tracking-wide text-emerald-300 mb-1">💪 Mocne strony</div>
+              <ul className="space-y-1">{strengths.map((t, i) => (<li key={i} className="text-[11.5px] leading-snug flex gap-1.5"><span className="text-emerald-300 shrink-0">+</span><span className="opacity-90">{t}</span></li>))}</ul>
+            </div>
+          )}
+          {weaknesses.length > 0 && (
+            <div data-testid="weaknesses">
+              <div className="text-[10px] font-black uppercase tracking-wide text-rose-300 mb-1">⚠️ Słabe strony</div>
+              <ul className="space-y-1">{weaknesses.map((t, i) => (<li key={i} className="text-[11.5px] leading-snug flex gap-1.5"><span className="text-rose-300 shrink-0">−</span><span className="opacity-90">{t}</span></li>))}</ul>
+            </div>
+          )}
+          {ai.plan && <div className="text-[11.5px] leading-snug flex gap-1.5 pt-2 border-t border-white/10"><span className="shrink-0">🎯</span><p><strong className="font-black">Plan: </strong><span className="opacity-90">{ai.plan}</span></p></div>}
+        </div>
+      ) : (
+        <VerdictList verdict={verdict || (ai && ai.verdict)} compact={compact} />
+      )}
+    </div>
+  );
+};
+
+const ShotTabs = ({ photo, view, onView, className = '' }) =>
+  hasShotSet(photo) ? (
+    <div className={`ia-seg text-[11px] ${className}`} data-testid="shot-tabs">
+      {SHOT_VIEWS.map((v) => (
+        <button type="button" key={v.id} onClick={(e) => { e.stopPropagation(); onView(v.id); }} className={view === v.id ? 'on' : ''} data-testid={`shot-tab-${v.id}`}>{v.label}</button>
+      ))}
+    </div>
+  ) : null;
 
 const LineChart = ({ hist, metric }) => {
   const pts = (hist || []).map((h) => ({ label: h.date, v: Number(h[metric]) })).filter((p) => Number.isFinite(p.v) && p.v !== 0);
@@ -694,104 +762,113 @@ const evaluatePhysiqueAI = (player, photoIdx = 0) => {
   };
 };
 
-const autoEvaluateUploadedPhoto = (file, playerContext, zoomFactor = 1.0) => {
-  return new Promise((resolve) => {
-    const localResult = (realDataUrl) => {
-      const baseEval = evaluatePhysiqueAI(playerContext);
-      resolve({
-        // Jeśli udało się przygotować prawdziwe zdjęcie – zachowujemy je nawet gdy AI w chmurze nie odpowie
-        dataUrl: realDataUrl || createDemoPhysiquePoster(playerContext.name || 'Gracz', playerContext.goal || 'Redukcja', playerContext.currentWeight || 84, playerContext.measurements?.waist?.current || 85, playerContext.measurements?.chest?.current || 105, '#a3e635'),
-        aiVision: {
-          overall: baseEval.overall,
-          vScore: parseFloat(baseEval.vScore),
-          defScore: parseFloat(baseEval.defScore),
-          armScore: parseFloat(baseEval.armScore),
-          estBf: baseEval.estBf,
-          lightingNote: 'Tryb awaryjny',
-          verdict: baseEval.summary,
-          source: 'Analizator Biometryczny AI',
-          verified: null
-        }
-      });
-    };
+/* ------------------------------ Zestaw 3 zdjęć: przód, plecy, bok ------------------------------ */
+const SHOT_VIEWS = [
+  { id: 'front', label: 'Przód', hint: 'Stań prosto, ręce lekko od ciała, napięty brzuch' },
+  { id: 'back', label: 'Plecy', hint: 'Plecami do aparatu, ręce lekko od ciała' },
+  { id: 'side', label: 'Bok', hint: 'Bokiem, naturalna postawa, ręce wzdłuż ciała' }
+];
+const EMPTY_SHOTS = { front: null, back: null, side: null };
+const shotUrl = (photo, view) => (view === 'back' && photo.urlBack) || (view === 'side' && photo.urlSide) || photo.url;
+const hasShotSet = (photo) => Boolean(photo && photo.urlBack && photo.urlSide);
 
+// kadruje i zmniejsza jedno zdjęcie (zoom = wycięcie środka), zwraca JPEG jako data URL
+const prepareShot = (file, zoomFactor = 1.0, maxH = 520, quality = 0.72) =>
+  new Promise((resolve) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
-      img.onload = async () => {
-        const canvas = document.createElement('canvas');
-        const maxH = 560;
-        const cropW = img.width / zoomFactor;
-        const cropH = img.height / zoomFactor;
-        const startX = (img.width - cropW) / 2;
-        const startY = (img.height - cropH) * 0.42;
-
-        const scale = Math.min(1, maxH / cropH);
-        canvas.width = Math.max(1, Math.round(cropW * scale));
-        canvas.height = Math.max(1, Math.round(cropH * scale));
-
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, startX, startY, cropW, cropH, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.74);
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 16000);
-
+      img.onload = () => {
         try {
-          const res = await fetch('/api/analyze', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            signal: controller.signal,
-            body: JSON.stringify({
-              imageBase64: dataUrl.split(',')[1],
-              player: {
-                heightCm: playerContext.heightCm,
-                currentWeight: playerContext.currentWeight,
-                goal: playerContext.goal,
-                waist: playerContext.measurements?.waist?.current,
-                chest: playerContext.measurements?.chest?.current,
-                biceps: playerContext.measurements?.biceps?.current
-              }
-            })
-          });
-          clearTimeout(timeoutId);
-
-          if (res.ok) {
-            const serverAI = await res.json();
-            if (serverAI && serverAI.vScore) {
-              const pc = serverAI.photoCheck || null;
-              const check = pc ? { isBody: pc.isBody !== false, quality: pc.quality || '', issue: pc.issue || '', plausible: pc.plausible !== false, note: pc.plausibilityNote || '' } : null;
-              const overall = (Number(serverAI.vScore) * 0.4 + Number(serverAI.defScore) * 0.35 + Number(serverAI.armScore) * 0.25).toFixed(1);
-              resolve({
-                dataUrl,
-                aiVision: {
-                  vScore: Number(serverAI.vScore).toFixed(1),
-                  defScore: Number(serverAI.defScore).toFixed(1),
-                  armScore: Number(serverAI.armScore).toFixed(1),
-                  estBf: serverAI.estBf || 18,
-                  lightingNote: serverAI.lightingNote || 'Zweryfikowano przez Gemini Vision AI',
-                  verdict: serverAI.verdict,
-                  overall: parseFloat(overall),
-                  source: 'Gemini Vision AI (Chmura)',
-                  verified: check ? check.isBody : null,
-                  check
-                }
-              });
-              return;
-            }
-          }
+          const cropW = img.width / zoomFactor;
+          const cropH = img.height / zoomFactor;
+          const startX = (img.width - cropW) / 2;
+          const startY = (img.height - cropH) * 0.42;
+          const scale = Math.min(1, maxH / cropH);
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(cropW * scale));
+          canvas.height = Math.max(1, Math.round(cropH * scale));
+          canvas.getContext('2d').drawImage(img, startX, startY, cropW, cropH, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', quality));
         } catch (_) {
-          clearTimeout(timeoutId);
+          resolve(null);
         }
-
-        localResult(dataUrl);
       };
-      img.onerror = () => localResult(null);
+      img.onerror = () => resolve(null);
       img.src = e.target.result;
     };
-    reader.onerror = () => localResult(null);
+    reader.onerror = () => resolve(null);
     reader.readAsDataURL(file);
   });
+const shotSize = (view) => (view === 'front' ? { maxH: 560, quality: 0.74 } : { maxH: 480, quality: 0.7 });
+
+// ocena całego zestawu: AI w chmurze albo – gdy nie odpowie – wyliczenie z pomiarów
+const evaluatePhotoSet = async (shots, playerContext) => {
+  const viewIds = SHOT_VIEWS.map((v) => v.id).filter((id) => shots[id]);
+  const local = () => {
+    const base = evaluatePhysiqueAI(playerContext);
+    const v = parseFloat(base.vScore);
+    const d = parseFloat(base.defScore);
+    const a = parseFloat(base.armScore);
+    const views = {};
+    viewIds.forEach((id) => { views[id] = { vScore: v, defScore: d, armScore: a, overall: base.overall, note: '' }; });
+    return { overall: base.overall, vScore: v, defScore: d, armScore: a, estBf: base.estBf, lightingNote: 'Tryb awaryjny', verdict: base.summary, strengths: [], weaknesses: [], plan: '', views, source: 'Analizator Biometryczny AI', verified: null, check: null };
+  };
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 28000);
+  try {
+    const images = {};
+    viewIds.forEach((id) => { images[id] = shots[id].split(',')[1]; });
+    const res = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        images,
+        player: {
+          heightCm: playerContext.heightCm,
+          currentWeight: playerContext.currentWeight,
+          goal: playerContext.goal,
+          waist: playerContext.measurements?.waist?.current,
+          chest: playerContext.measurements?.chest?.current,
+          biceps: playerContext.measurements?.biceps?.current
+        }
+      })
+    });
+    clearTimeout(timeoutId);
+    if (res.ok) {
+      const j = await res.json();
+      if (j && j.vScore) {
+        const pc = j.photoCheck || null;
+        const check = pc ? { isBody: pc.isBody !== false, quality: pc.quality || '', issue: pc.issue || '', plausible: pc.plausible !== false, note: pc.plausibilityNote || '', views: pc.views || null } : null;
+        const views = {};
+        viewIds.forEach((id) => {
+          const x = (j.views && j.views[id]) || {};
+          views[id] = { vScore: Number(x.vScore) || Number(j.vScore), defScore: Number(x.defScore) || Number(j.defScore), armScore: Number(x.armScore) || Number(j.armScore), overall: Number(x.overall) || Number(j.overall), note: x.note || '' };
+        });
+        const overall = Number(j.overall) || Number((Number(j.vScore) * 0.4 + Number(j.defScore) * 0.35 + Number(j.armScore) * 0.25).toFixed(1));
+        return {
+          vScore: Number(j.vScore).toFixed(1),
+          defScore: Number(j.defScore).toFixed(1),
+          armScore: Number(j.armScore).toFixed(1),
+          overall,
+          estBf: j.estBf || 18,
+          lightingNote: j.lightingNote || 'Zweryfikowano przez Gemini Vision AI',
+          verdict: j.verdict,
+          strengths: Array.isArray(j.strengths) ? j.strengths : [],
+          weaknesses: Array.isArray(j.weaknesses) ? j.weaknesses : [],
+          plan: j.plan || '',
+          views,
+          source: 'Gemini Vision AI (Chmura)',
+          verified: check ? check.isBody : null,
+          check
+        };
+      }
+    }
+  } catch (_) {
+    clearTimeout(timeoutId);
+  }
+  return local();
 };
 
 const calcPlatesPerSide = (targetWeight) => {
@@ -1912,6 +1989,9 @@ export default function App() {
   const [scanOn, setScanOn] = useState(false);
   const [scanMsg, setScanMsg] = useState('');
   const [renaming, setRenaming] = useState(false);
+  const [profMenu, setProfMenu] = useState(false);
+  const [onbHidden, setOnbHidden] = useState(() => { try { return JSON.parse(localStorage.getItem('iron_onb_hidden') || '[]'); } catch (_) { return []; } });
+  const hideOnb = (pid) => setOnbHidden((prev) => { const next = [...new Set([...prev, pid])]; try { localStorage.setItem('iron_onb_hidden', JSON.stringify(next)); } catch (_) {} return next; });
   const [renameVal, setRenameVal] = useState('');
   const [unlocked, setUnlocked] = useState(() => { try { return JSON.parse(localStorage.getItem('ia_unlocked') || '{}') || {}; } catch (_) { return {}; } });
   const [pinMode, setPinMode] = useState(null);
@@ -1951,9 +2031,13 @@ export default function App() {
   const [showAddPlayer, setShowAddPlayer] = useState(false);
   const [newPlayer, setNewPlayer] = useState({ name: '', age: '22', heightCm: '180', goal: 'Redukcja', dietKcal: '2400', dietProtein: '170', weight: '82', waist: '85', biceps: '38', chest: '105' });
 
-  const [rawPhotoFile, setRawPhotoFile] = useState(null);
+  const rawShotsRef = useRef({ ...EMPTY_SHOTS });
+  const shotsRef = useRef({ ...EMPTY_SHOTS });
+  const analysisRef = useRef(0);
+  const [shotViewMap, setShotViewMap] = useState({});
+  const [lightboxView, setLightboxView] = useState('front');
   const [photoZoom, setPhotoZoom] = useState(1.0);
-  const [bodyForm, setBodyForm] = useState({ weight: '', waist: '', biceps: '', chest: '', note: '', photoPreview: null, autoAiResult: null });
+  const [bodyForm, setBodyForm] = useState({ weight: '', waist: '', biceps: '', chest: '', note: '', shots: { ...EMPTY_SHOTS }, autoAiResult: null });
   const [isAnalyzingPhoto, setIsAnalyzingPhoto] = useState(false);
 
   const [commentDrafts, setCommentDrafts] = useState({});
@@ -2430,8 +2514,10 @@ export default function App() {
   const wizPlan = useMemo(() => buildPlan(wiz, wizCalc), [wiz, wizCalc]);
 
   /* --------------------------------- Zdjęcia --------------------------------- */
-  const runPhotoAnalysis = async (fileToScan, zoomToUse) => {
-    if (!fileToScan) return;
+  const analyzeShots = async (shots) => {
+    if (!SHOT_VIEWS.every((v) => shots[v.id])) return;
+    const token = analysisRef.current + 1;
+    analysisRef.current = token;
     setIsAnalyzingPhoto(true);
     try {
       const tempContext = {
@@ -2443,25 +2529,61 @@ export default function App() {
           chest: { ...activePlayer.measurements.chest, current: parseFloat(bodyForm.chest) || activePlayer.measurements.chest.current }
         }
       };
-      const evaluated = await autoEvaluateUploadedPhoto(fileToScan, tempContext, zoomToUse);
-      setBodyForm((prev) => ({ ...prev, photoPreview: evaluated.dataUrl, autoAiResult: evaluated.aiVision }));
+      const result = await evaluatePhotoSet(shots, tempContext);
+      if (analysisRef.current === token) setBodyForm((prev) => ({ ...prev, autoAiResult: result }));
     } catch (_) {
-      showToast('Nie udało się przeanalizować zdjęcia.', 'warn');
+      showToast('Nie udało się przeanalizować zdjęć.', 'warn');
     } finally {
-      setIsAnalyzingPhoto(false);
+      if (analysisRef.current === token) setIsAnalyzingPhoto(false);
     }
   };
 
-  const handleSelectPhotoFile = async (e) => {
+  const handleSelectShot = async (view, e) => {
     const file = e.target.files?.[0];
     try { e.target.value = ''; } catch (_) {} // pozwala wybrać ten sam plik ponownie
-    if (!file) return;
-    setRawPhotoFile(file);
-    await runPhotoAnalysis(file, photoZoom);
+    if (!file || isLocked) return;
+    rawShotsRef.current = { ...rawShotsRef.current, [view]: file };
+    analysisRef.current += 1; // unieważnia trwającą analizę – zestaw się zmienił
+    setIsAnalyzingPhoto(false);
+    setBodyForm((prev) => ({ ...prev, autoAiResult: null }));
+    const size = shotSize(view);
+    const dataUrl = await prepareShot(file, photoZoom, size.maxH, size.quality);
+    if (!dataUrl) {
+      rawShotsRef.current = { ...rawShotsRef.current, [view]: null };
+      showToast('Nie udało się wczytać zdjęcia.', 'warn');
+      return;
+    }
+    shotsRef.current = { ...shotsRef.current, [view]: dataUrl };
+    setBodyForm((prev) => ({ ...prev, shots: { ...shotsRef.current } }));
+    await analyzeShots(shotsRef.current);
   };
+
+  const handleClearShot = (view) => {
+    rawShotsRef.current = { ...rawShotsRef.current, [view]: null };
+    shotsRef.current = { ...shotsRef.current, [view]: null };
+    analysisRef.current += 1;
+    setIsAnalyzingPhoto(false);
+    setBodyForm((prev) => ({ ...prev, shots: { ...shotsRef.current }, autoAiResult: null }));
+  };
+
   const handleChangeZoom = async (z) => {
     setPhotoZoom(z);
-    if (rawPhotoFile) await runPhotoAnalysis(rawPhotoFile, z);
+    const raw = rawShotsRef.current;
+    if (!SHOT_VIEWS.some((v) => raw[v.id])) return;
+    analysisRef.current += 1;
+    setIsAnalyzingPhoto(true);
+    const next = { ...EMPTY_SHOTS };
+    for (const v of SHOT_VIEWS) {
+      if (raw[v.id]) {
+        const size = shotSize(v.id);
+        // eslint-disable-next-line no-await-in-loop
+        next[v.id] = await prepareShot(raw[v.id], z, size.maxH, size.quality);
+      }
+    }
+    shotsRef.current = next;
+    setBodyForm((prev) => ({ ...prev, shots: { ...next }, autoAiResult: null }));
+    setIsAnalyzingPhoto(false);
+    await analyzeShots(next);
   };
 
   const handleSaveBodyAndPhoto = (e) => {
@@ -2483,7 +2605,15 @@ export default function App() {
       }
     };
 
-    const photoUrl = bodyForm.photoPreview || createDemoPhysiquePoster(activePlayer.name, activePlayer.goal, w, waist, chest, theme.swatch);
+    const shots = bodyForm.shots || EMPTY_SHOTS;
+    if (!SHOT_VIEWS.every((v) => shots[v.id])) {
+      showToast('Dodaj wszystkie trzy zdjęcia: przód, plecy i bok.', 'warn');
+      return;
+    }
+    if (isAnalyzingPhoto) {
+      showToast('Poczekaj, aż AI skończy analizę zdjęć.', 'warn');
+      return;
+    }
     const localEval = evaluatePhysiqueAI(updatedPlayerTemp, 0);
 
     // zdjęcie, którego AI nie uznało za sylwetkę, zapisujemy bez jego oceny (nie wpływa na ranking)
@@ -2498,7 +2628,11 @@ export default function App() {
       verdict: aiRes?.verdict || localEval.summary,
       source: aiRes?.source || localEval.source,
       verified: bodyForm.autoAiResult ? (bodyForm.autoAiResult.verified === undefined ? null : bodyForm.autoAiResult.verified) : null,
-      check: bodyForm.autoAiResult?.check || null
+      check: bodyForm.autoAiResult?.check || null,
+      strengths: aiRes?.strengths || [],
+      weaknesses: aiRes?.weaknesses || [],
+      plan: aiRes?.plan || '',
+      views: aiRes?.views || null
     };
 
     const todayStr = new Date().toLocaleDateString('pl-PL');
@@ -2511,7 +2645,9 @@ export default function App() {
       note: bodyForm.note || `Aktualizacja sylwetki (${activePlayer.goal} • ${activePlayer.dietKcal} kcal)`,
       reactions: { dzik: 0, swinia: 0, bocian: 0, podejrzany: 0 },
       comments: [],
-      url: photoUrl,
+      url: shots.front,
+      urlBack: shots.back,
+      urlSide: shots.side,
       aiVision: finalAiVision
     };
 
@@ -2530,12 +2666,13 @@ export default function App() {
         weighIns: typedWeight ? [...(p.weighIns || []), { ts: newPhotoEntry.ts, w: typedWeight }] : p.weighIns || [],
         history: [...(p.history || []), { date: todayStr.slice(0, 5), weight: w, waist, bench1RM: bestRM(p, 'bench'), kcal: p.dietKcal, aiScore: Number(finalAiVision.overall) }]
       }),
-      { toastMsg: 'Zdjęcie zapisane ✓' }
+      { toastMsg: 'Zestaw zdjęć zapisany ✓' }
     );
 
     setPhotoIdxMap((prev) => ({ ...prev, [activeId]: 0 }));
-    setRawPhotoFile(null);
-    setBodyForm({ weight: '', waist: '', biceps: '', chest: '', note: '', photoPreview: null, autoAiResult: null });
+    rawShotsRef.current = { ...EMPTY_SHOTS };
+    shotsRef.current = { ...EMPTY_SHOTS };
+    setBodyForm({ weight: '', waist: '', biceps: '', chest: '', note: '', shots: { ...EMPTY_SHOTS }, autoAiResult: null });
   };
 
   /* --------------------------- Awatar / ważenie / rekordy --------------------------- */
@@ -3294,13 +3431,16 @@ export default function App() {
                 </div>
                 <button onClick={() => setLightboxPhoto(null)} className="ia-btn ia-ghost !p-2"><Icon name="close" /></button>
               </div>
-              <img src={lightboxPhoto.url} alt={lightboxPhoto.playerName} className="w-full max-h-[62vh] object-contain bg-black" />
+              <div className="relative bg-black">
+                <img key={lightboxView} src={shotUrl(lightboxPhoto, lightboxView)} alt={lightboxPhoto.playerName} className="ia-shot w-full max-h-[62vh] object-contain bg-black" />
+                <ShotTabs photo={lightboxPhoto} view={lightboxView} onView={setLightboxView} className="absolute bottom-3 left-1/2 -translate-x-1/2" />
+              </div>
               <div className="p-4 text-xs space-y-3">
                 <div className="font-semibold">{lightboxPhoto.note}</div>
                 {lightboxPhoto.aiVision && (
                   <div className="ia-soft rounded-2xl p-3.5 space-y-2">
                     <div className="font-black uppercase text-[10px] tracking-wide">Szczegółowa ocena ({lightboxPhoto.aiVision.source})</div>
-                    <div className="text-white"><VerdictList verdict={lightboxPhoto.aiVision.verdict} /></div>
+                    <div className="text-white"><SetSummary ai={lightboxPhoto.aiVision} /></div>
                   </div>
                 )}
               </div>
@@ -3418,10 +3558,6 @@ export default function App() {
                 </button>
               ))}
             </div>
-            <button onClick={() => setPinnedId(pinnedId === activeId ? '' : activeId)} className={`ia-btn !py-1.5 !px-2.5 text-[11px] shrink-0 ${pinnedId === activeId ? 'ia-soft' : 'ia-ghost'}`}>
-              <Icon name={pinnedId === activeId ? 'lock' : 'unlock'} className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{pinnedId === activeId ? 'Mój telefon' : 'Przypnij'}</span>
-            </button>
             {players.length > 1 && !isLocked && (
               <button onClick={() => handleDeletePlayer(activeId)} title="Usuń aktywną osobę" className="ia-btn ia-ghost ia-danger !p-2 shrink-0"><Icon name="trash" className="w-3.5 h-3.5" /></button>
             )}
@@ -3476,20 +3612,20 @@ export default function App() {
             </section>
           )}
           {currentEnriched && (
-            <section className={`ia-hero ia-cine p-5 sm:p-7 ${homeTab ? '' : 'hidden md:block'}`} data-testid="hero">
+            <section className={`ia-hero ia-cine p-4 sm:p-7 ${homeTab ? 'flex flex-col' : 'hidden md:flex md:flex-col'}`} data-testid="hero">
               {!theme.photo && <div className="ia-wm" aria-hidden="true">TREN</div>}
-              <div className="relative z-10 flex flex-col sm:flex-row sm:items-center gap-5">
+              <div className="relative z-10 flex items-center gap-3 sm:gap-5">
                 <div className="relative shrink-0 self-start">
-                  <div className="ia-av-ring"><Avatar name={currentEnriched.name} src={currentEnriched.avatar} size={104} /></div>
+                  <div className="ia-av-ring"><Avatar name={currentEnriched.name} src={currentEnriched.avatar} size={84} /></div>
                   {!isLocked && (
-                    <label title="Zmień zdjęcie profilowe" className="absolute -bottom-1 -right-1 w-10 h-10 rounded-full ia-grad flex items-center justify-center cursor-pointer shadow-xl hover:scale-110 transition-transform">
+                    <label title="Zmień zdjęcie profilowe" className="absolute -bottom-1 -right-1 w-9 h-9 rounded-full ia-grad flex items-center justify-center cursor-pointer shadow-xl transition-[scale] duration-200 hover:scale-110 active:scale-[.96]">
                       <Icon name="camera" className="w-[18px] h-[18px]" />
                       <input type="file" accept="image/*" onChange={handleAvatarFile} className="hidden" data-testid="avatar-input" />
                     </label>
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[11px] font-black tracking-[.22em] ia-accent uppercase">Miejsce #{ovrRank[currentEnriched.id]} w arenie • {currentEnriched.goal}</div>
+                  <div className="text-[11px] font-black tracking-[.14em] sm:tracking-[.22em] ia-accent uppercase truncate">Miejsce #{ovrRank[currentEnriched.id]}<span className="hidden sm:inline"> • {currentEnriched.goal}</span></div>
                   {renaming ? (
                     <form onSubmit={saveRename} className="flex items-center gap-2 mt-1.5" data-testid="rename-form">
                       <input autoFocus maxLength={24} value={renameVal} onChange={(e) => setRenameVal(e.target.value)} onKeyDown={(e) => { if (e.key === 'Escape') setRenaming(false); }} className="ia-input text-xl font-black min-w-0" data-testid="rename-input" aria-label="Nowe imię" />
@@ -3497,32 +3633,48 @@ export default function App() {
                       <button type="button" onClick={() => setRenaming(false)} className="ia-btn ia-ghost shrink-0" data-testid="rename-cancel">Anuluj</button>
                     </form>
                   ) : (
-                    <h2 className="ia-big text-4xl sm:text-6xl font-black uppercase leading-[.95] mt-1.5 truncate">{currentEnriched.name}</h2>
+                    <h2 className="ia-big text-3xl sm:text-6xl font-black uppercase leading-[.95] mt-1 truncate">{currentEnriched.name}</h2>
                   )}
-                  <div className="flex flex-wrap items-center gap-2 mt-3 text-[11px] font-bold">
-                    <span className="px-2.5 py-1 rounded-full bg-white/8 border border-white/10">🏆 {currentEnriched.prTotal} {currentEnriched.prTotal === 1 ? 'rekord' : 'rekordów'}</span>
-                    <span className="px-2.5 py-1 rounded-full bg-white/8 border border-white/10">⚡ {currentEnriched.season.pts} pkt w sezonie</span>
-                    <span className="px-2.5 py-1 rounded-full bg-white/8 border border-white/10">⚔️ pojedynki {currentEnriched.duelW}–{currentEnriched.duelL}</span>
-                    <span className="px-2.5 py-1 rounded-full bg-white/8 border border-white/10">📈 progres {fmtSigned(currentEnriched.prog.pts, 1)}</span>
-                    {!isLocked && !renaming && (
-                      <button type="button" onClick={startRename} className="text-[11px] ia-faint hover:text-white underline underline-offset-2" data-testid="rename-start">✎ zmień imię</button>
-                    )}
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-2.5 sm:mt-3 text-[11px] font-bold">
+                    <button type="button" onClick={() => setProfMenu((v) => !v)} aria-expanded={profMenu} className={`ia-btn !py-1 !px-2.5 text-[11px] ${profMenu ? 'ia-soft' : 'ia-ghost'}`} data-testid="profile-menu-btn"><Icon name="settings" className="w-3.5 h-3.5" /> Profil</button>
+                    <span className="hidden sm:inline px-2.5 py-1 rounded-full bg-white/8 border border-white/10">🏆 {currentEnriched.prTotal}<span className="hidden sm:inline"> {currentEnriched.prTotal === 1 ? 'rekord' : 'rekordów'}</span></span>
+                    <span className="hidden sm:inline px-2.5 py-1 rounded-full bg-white/8 border border-white/10">⚡ {currentEnriched.season.pts}<span className="hidden sm:inline"> pkt w sezonie</span></span>
+                    <span className="hidden sm:inline px-2.5 py-1 rounded-full bg-white/8 border border-white/10">⚔️ pojedynki {currentEnriched.duelW}–{currentEnriched.duelL}</span>
+                    <span className="hidden sm:inline px-2.5 py-1 rounded-full bg-white/8 border border-white/10">📈 progres {fmtSigned(currentEnriched.prog.pts, 1)}</span>
                     {pinLocked && !otherPinned && !pinMode && (
                       <button type="button" onClick={() => openPin('unlock')} className="px-2.5 py-1 rounded-full ia-accent-bg text-[11px] font-black" data-testid="pin-unlock-start">🔒 Odblokuj PIN-em</button>
                     )}
-                    {!isLocked && !renaming && (
-                      <button type="button" onClick={() => openPin('set')} className="text-[11px] ia-faint hover:text-white underline underline-offset-2" data-testid="pin-set-start">{currentEnriched.pinHash ? '🔐 zmień PIN' : '🔐 ustaw PIN'}</button>
-                    )}
-                    {!isLocked && !renaming && currentEnriched.pinHash && (
-                      <>
-                        <button type="button" onClick={lockNow} className="text-[11px] ia-faint hover:text-white underline underline-offset-2" data-testid="pin-lock-now">zablokuj teraz</button>
-                        <button type="button" onClick={() => openPin('remove')} className="text-[11px] ia-faint hover:text-white underline underline-offset-2" data-testid="pin-remove-start">usuń PIN</button>
-                      </>
-                    )}
-                    {currentEnriched.avatar && !isLocked && (
-                      <button type="button" onClick={handleRemoveAvatar} className="text-[11px] ia-faint hover:text-white underline underline-offset-2">usuń zdjęcie profilowe</button>
-                    )}
                   </div>
+                  {profMenu && (
+                    <div className="mt-3 rounded-2xl border border-white/10 bg-black/35 p-3 space-y-3 text-xs ia-pop" data-testid="profile-menu">
+                      {!isLocked && !renaming && (
+                        <div className="flex flex-wrap gap-1.5">
+                          <button type="button" onClick={() => { setProfMenu(false); startRename(); }} className="ia-btn ia-ghost !py-1.5 text-[11px]" data-testid="rename-start">✎ Zmień imię</button>
+                          {currentEnriched.avatar && (
+                            <button type="button" onClick={() => { setProfMenu(false); handleRemoveAvatar(); }} className="ia-btn ia-ghost !py-1.5 text-[11px]" data-testid="avatar-remove">Usuń zdjęcie profilowe</button>
+                          )}
+                        </div>
+                      )}
+                      <div className="space-y-2" data-testid="security-box">
+                        <div className="font-black text-[11px] uppercase tracking-wide ia-muted">Zabezpieczenia profilu</div>
+                        <div className="flex flex-wrap gap-1.5">
+                          <button type="button" onClick={() => setPinnedId(pinnedId === activeId ? '' : activeId)} className={`ia-btn !py-1.5 text-[11px] ${pinnedId === activeId ? 'ia-soft' : 'ia-ghost'}`} data-testid="pin-phone-toggle">
+                            <Icon name={pinnedId === activeId ? 'lock' : 'unlock'} className="w-3.5 h-3.5" /> {pinnedId === activeId ? 'Odepnij od tego telefonu' : 'Przypnij do tego telefonu'}
+                          </button>
+                          {!isLocked && (
+                            <button type="button" onClick={() => { setProfMenu(false); openPin('set'); }} className="ia-btn ia-ghost !py-1.5 text-[11px]" data-testid="pin-set-start">{currentEnriched.pinHash ? '🔐 zmień PIN' : '🔐 ustaw PIN'}</button>
+                          )}
+                          {!isLocked && currentEnriched.pinHash && (
+                            <>
+                              <button type="button" onClick={() => { setProfMenu(false); lockNow(); }} className="ia-btn ia-ghost !py-1.5 text-[11px]" data-testid="pin-lock-now">zablokuj teraz</button>
+                              <button type="button" onClick={() => { setProfMenu(false); openPin('remove'); }} className="ia-btn ia-ghost !py-1.5 text-[11px]" data-testid="pin-remove-start">usuń PIN</button>
+                            </>
+                          )}
+                        </div>
+                        <p className="text-[11px] leading-snug ia-muted">Przypięcie sprawia, że ten telefon zmienia tylko ten profil. PIN dodatkowo blokuje zapisy, gdy ktoś weźmie Twój telefon. To blokada „na pomyłki”, a nie szyfrowanie danych.</p>
+                      </div>
+                    </div>
+                  )}
                   {pinLocked && !pinMode && <p className="mt-2 text-[11px] ia-muted" data-testid="pin-banner">🔒 Profil chroniony PIN-em – możesz go oglądać, ale żeby coś zmienić (waga, rekordy, posiłki), odblokuj go.</p>}
                   {pinMode && (
                     <form onSubmit={submitPin} className="mt-3 flex flex-wrap items-center gap-2 text-xs ia-pop" data-testid="pin-form">
@@ -3534,37 +3686,70 @@ export default function App() {
                     </form>
                   )}
                 </div>
-                <div className="flex sm:flex-col items-center gap-2 sm:gap-0 sm:text-center shrink-0">
-                  <div className="ia-big text-6xl sm:text-7xl font-black leading-none ia-grad-text"><CountUp value={currentEnriched.ovr} /></div>
-                  <div className="text-[10px] font-black tracking-[.3em] ia-muted sm:mt-1.5">OVR</div>
+                <div className="flex flex-col items-center text-center shrink-0">
+                  <div className="ia-big text-5xl sm:text-7xl font-black leading-none ia-grad-text tabular-nums"><CountUp value={currentEnriched.ovr} /></div>
+                  <div className="text-[10px] font-black tracking-[.3em] ia-muted mt-1 sm:mt-1.5">OVR</div>
                 </div>
               </div>
-              <div className="relative z-10 mt-5 grid grid-cols-2 lg:grid-cols-4 gap-2.5" data-testid="hero-tiles">
+              <div className="relative z-10 mt-3 sm:mt-5 order-3 sm:order-2 grid grid-cols-4 gap-1.5 sm:gap-2.5" data-testid="hero-tiles">
                 {heroTiles.map((t) => (
-                  <div key={t.k} className="ia-tile">
-                    <div className="text-[10px] font-black tracking-wider ia-muted uppercase">{t.icon} {t.k}</div>
-                    <div className="ia-big text-xl font-black tabular-nums mt-0.5">{t.v}</div>
-                    <div className="text-[10px] ia-faint">{t.sub}</div>
-                    {t.spark && <div className="mt-1"><Sparkline data={t.spark} /></div>}
+                  <div key={t.k} className="ia-tile !p-2 sm:!p-3.5 min-w-0">
+                    <div className="text-[9.5px] sm:text-[10px] font-black sm:tracking-wide ia-muted uppercase truncate"><span className="hidden sm:inline">{t.icon} </span>{t.k}</div>
+                    <div className="ia-big text-base sm:text-xl font-black tabular-nums mt-0.5 truncate">{t.v}</div>
+                    <div className="hidden sm:block text-[10px] ia-faint">{t.sub}</div>
+                    {t.spark && <div className="hidden sm:block mt-1"><Sparkline data={t.spark} /></div>}
                   </div>
                 ))}
               </div>
               {!isLocked ? (
-                <form onSubmit={handleQuickWeigh} className="relative z-10 mt-5 pt-4 border-t border-white/10 flex flex-wrap items-center gap-2 text-xs">
-                  <span className="font-black flex items-center gap-1.5"><Icon name="scale" className="w-4 h-4 ia-accent" /> Szybkie ważenie</span>
-                  <input type="text" inputMode="decimal" autoComplete="off" placeholder={String(currentEnriched.currentWeight)} value={weighInput} onChange={(e) => setWeighInput(e.target.value)} aria-label="Waga w kilogramach" className="ia-input !w-28" data-testid="weigh-input" />
-                  <button type="submit" className="ia-btn ia-accent-bg" data-testid="weigh-save">Zapisz wagę</button>
-                  <span className="ia-muted text-[11px]">
+                <form onSubmit={handleQuickWeigh} className="relative z-10 mt-3 sm:mt-5 sm:pt-4 sm:border-t sm:border-white/10 order-2 sm:order-3 flex items-center gap-2 text-xs sm:flex-wrap">
+                  <span className="font-black flex items-center gap-1.5 shrink-0"><Icon name="scale" className="w-4 h-4 ia-accent" /> <span className="sm:hidden">Waga</span><span className="hidden sm:inline">Szybkie ważenie</span></span>
+                  <input type="text" inputMode="decimal" autoComplete="off" placeholder={String(currentEnriched.currentWeight)} value={weighInput} onChange={(e) => setWeighInput(e.target.value)} aria-label="Waga w kilogramach" className="ia-input min-w-0 flex-1 sm:flex-none sm:!w-28" data-testid="weigh-input" />
+                  <button type="submit" className="ia-btn ia-accent-bg shrink-0" data-testid="weigh-save">Zapisz wagę</button>
+                  <span className="hidden sm:inline ia-muted text-[11px]">
                     {(currentEnriched.weighIns || []).length
                       ? `Ostatnio: ${String(currentEnriched.weighIns[currentEnriched.weighIns.length - 1].w).replace('.', ',')} kg • ${timeAgo(currentEnriched.weighIns[currentEnriched.weighIns.length - 1].ts, nowTs)}`
                       : 'Waż się raz w tygodniu rano na czczo – z trendu wagi AI poprawi Ci kalorie.'}
                   </span>
                 </form>
               ) : (
-                <div className="relative z-10 mt-4 text-[11px] ia-muted">{pinLocked && !otherPinned ? 'Ten profil jest chroniony PIN-em – kliknij „Odblokuj PIN-em” przy imieniu, aby coś zapisać.' : 'Przeglądasz profil znajomego – wybierz swoje imię u góry (albo odepnij „Mój telefon”), aby coś zapisać.'}</div>
+                <div className="relative z-10 mt-3 order-2 text-[11px] ia-muted">{pinLocked && !otherPinned ? 'Ten profil jest chroniony PIN-em – kliknij „Odblokuj PIN-em” przy imieniu, aby coś zapisać.' : 'Przeglądasz profil znajomego – wybierz swoje imię u góry (albo odepnij telefon w menu „Profil”), aby coś zapisać.'}</div>
               )}
             </section>
           )}
+
+          {/* ------------------------- ZACZNIJ TU (nowy profil) ------------------------- */}
+          {currentEnriched && homeTab && !isLocked && !onbHidden.includes(currentEnriched.id) && (() => {
+            const steps = [
+              { k: 'w', done: (currentEnriched.weighIns || []).length > 0, title: 'Zważ się', hint: 'Waga to punkt startowy dla kalorii i wykresów.', cta: 'Wpisz wagę', go: () => { const el = document.querySelector('[data-testid=weigh-input]'); if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.focus(); } } },
+              { k: 'p', done: (currentEnriched.photos || []).some(hasShotSet), title: 'Dodaj 3 zdjęcia: przód, plecy, bok', hint: 'AI policzy średnią i wskaże mocne oraz słabe strony.', cta: 'Dodaj zdjęcia', go: () => { const el = document.querySelector('[data-testid=shot-slots]'); if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } },
+              { k: 'f', done: (currentEnriched.meals || []).length > 0, title: 'Zapisz pierwszy posiłek', hint: 'Zdjęcie, kod kreskowy albo wyszukiwarka – jak wolisz.', cta: 'Otwórz dziennik', go: () => changeTab('food') },
+              { k: 'g', done: (currentEnriched.prs || []).length > 0, title: 'Wpisz pierwszy rekord siłowy', hint: 'Dzięki temu pojawisz się w rankingu siły.', cta: 'Otwórz siłownię', go: () => changeTab('gym') }
+            ];
+            const doneN = steps.filter((x) => x.done).length;
+            if (doneN === steps.length) return null;
+            return (
+              <section className="ia-glass ia-card p-4 sm:p-5 ia-up" data-testid="onboarding">
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <h3 className="text-sm font-black ia-h">Zacznij tu <span className="ia-muted font-bold tabular-nums">{doneN}/{steps.length}</span></h3>
+                  <button type="button" onClick={() => hideOnb(currentEnriched.id)} className="text-[11px] ia-muted hover:text-white underline underline-offset-2 min-h-[32px] px-1" data-testid="onboarding-hide">Ukryj</button>
+                </div>
+                <div className="h-1.5 rounded-full bg-white/10 overflow-hidden mb-3"><div className="h-full rounded-full ia-grad" style={{ width: `${(doneN / steps.length) * 100}%`, transition: 'width .6s cubic-bezier(.2,0,0,1)' }} /></div>
+                <ul className="space-y-2">
+                  {steps.map((x) => (
+                    <li key={x.k} className={`flex items-center gap-3 rounded-xl px-3 py-2 ia-sub ${x.done ? 'opacity-60' : ''}`} data-testid={`onb-${x.k}`} data-done={x.done ? '1' : '0'}>
+                      <span className={`w-6 h-6 shrink-0 rounded-full flex items-center justify-center border ${x.done ? 'ia-accent-bg border-transparent' : 'border-white/25'}`}>{x.done && <Icon name="check" className="w-3.5 h-3.5" />}</span>
+                      <span className="min-w-0 flex-1">
+                        <span className={`block text-[13px] font-bold leading-tight ${x.done ? 'line-through' : ''}`}>{x.title}</span>
+                        {!x.done && <span className="block text-[11px] ia-muted leading-snug mt-0.5">{x.hint}</span>}
+                      </span>
+                      {!x.done && <button type="button" onClick={x.go} className="ia-btn ia-ghost !py-1.5 !px-3 text-[11px] shrink-0">{x.cta}</button>}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            );
+          })()}
 
           {/* ------------------------- PASEK STATYSTYK AKTYWNEGO ------------------------- */}
           {currentEnriched && (
@@ -3638,13 +3823,13 @@ export default function App() {
             <div key="t1" className="grid grid-cols-1 lg:grid-cols-12 gap-5 ia-cine">
               <div className="lg:col-span-4 ia-glass ia-card p-5 h-fit">
                 <h3 className="text-sm font-black uppercase tracking-tight mb-1 flex items-center gap-2 ia-h">
-                  <Icon name="camera" className="w-4 h-4 ia-accent" /> Dodaj zdjęcie ({currentEnriched.name})
+                  <Icon name="camera" className="w-4 h-4 ia-accent" /> Dodaj zdjęcia ({currentEnriched.name})
                 </h3>
-                <p className="text-xs ia-muted mb-4">Wgraj zdjęcie z szatni – Sędzia AI oceni sylwetkę i wskaże braki.</p>
+                <p className="text-xs ia-muted mb-4">Trzy ujęcia: przód, plecy i bok. Sędzia AI oceni każde, policzy średnią i wskaże mocne oraz słabe strony.</p>
 
                 {isLocked ? (
                   <div className="p-4 rounded-2xl border border-amber-400/40 bg-amber-400/10 text-amber-200 text-xs leading-relaxed">
-                    {pinLocked && !otherPinned ? 'Profil chroniony PIN-em – odblokuj go przy imieniu, aby dodać zdjęcie.' : 'Przeglądasz profil znajomego. Wybierz swoje imię u góry albo odepnij „Mój telefon”.'}
+                    {pinLocked && !otherPinned ? 'Profil chroniony PIN-em – odblokuj go przy imieniu, aby dodać zdjęcie.' : 'Przeglądasz profil znajomego. Wybierz swoje imię u góry albo odepnij telefon w menu „Profil”.'}
                   </div>
                 ) : (
                   <form onSubmit={handleSaveBodyAndPhoto} className="space-y-3.5 text-xs">
@@ -3657,27 +3842,34 @@ export default function App() {
                       </div>
                     </div>
 
-                    <label className="block border-2 border-dashed border-white/15 rounded-2xl p-3 text-center cursor-pointer hover:border-[rgb(var(--ac)/.7)] transition-colors ia-sub">
-                      <input type="file" accept="image/*" onChange={handleSelectPhotoFile} className="hidden" />
-                      {isAnalyzingPhoto ? (
-                        <div className="py-8 space-y-3">
-                          <Icon name="sparkles" className="w-8 h-8 mx-auto ia-spin ia-accent" />
-                          <div className="font-bold text-sm">Sędzia AI analizuje sylwetkę…</div>
+                    <div className="space-y-2" data-testid="shot-slots">
+                      <div className="grid grid-cols-3 gap-2">
+                        {SHOT_VIEWS.map((v) => {
+                          const src = bodyForm.shots[v.id];
+                          return (
+                            <label key={v.id} className={`ia-slot ${src ? 'filled' : ''}`} title={v.hint}>
+                              <input type="file" accept="image/*" onChange={(e) => handleSelectShot(v.id, e)} className="hidden" data-testid={`shot-input-${v.id}`} />
+                              {src ? <img src={src} alt={`Podgląd: ${v.label}`} /> : <span className="ia-slot-empty"><Icon name="upload" className="w-5 h-5" /></span>}
+                              <span className="ia-slot-tag">{v.label}</span>
+                              {src && <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleClearShot(v.id); }} className="ia-slot-x" aria-label={`Usuń zdjęcie: ${v.label}`} data-testid={`shot-clear-${v.id}`}>✕</button>}
+                            </label>
+                          );
+                        })}
+                      </div>
+                      <p className="text-[11px] ia-muted leading-snug" data-testid="shot-count">
+                        {SHOT_VIEWS.filter((v) => bodyForm.shots[v.id]).length}/3 zdjęć
+                        {SHOT_VIEWS.every((v) => bodyForm.shots[v.id])
+                          ? ' – komplet, AI liczy średnią.'
+                          : ` – brakuje: ${SHOT_VIEWS.filter((v) => !bodyForm.shots[v.id]).map((v) => v.label.toLowerCase()).join(', ')}. To samo światło i odległość dla wszystkich ujęć.`}
+                      </p>
+                      {isAnalyzingPhoto && (
+                        <div className="py-3 space-y-2.5 text-center ia-pop" data-testid="analyzing">
+                          <Icon name="sparkles" className="w-6 h-6 mx-auto ia-spin ia-accent" />
+                          <div className="font-bold text-sm">Sędzia AI ocenia trzy ujęcia…</div>
                           <div className="h-2 rounded-full ia-shimmer mx-6" />
                         </div>
-                      ) : bodyForm.photoPreview ? (
-                        <div className="space-y-2 ia-pop">
-                          <img src={bodyForm.photoPreview} alt="Podgląd" className="w-full h-60 object-cover rounded-xl mx-auto" />
-                          <span className="inline-block text-[11px] font-bold ia-accent">Kliknij, aby wybrać inne zdjęcie</span>
-                        </div>
-                      ) : (
-                        <div className="py-7 space-y-2">
-                          <div className="w-12 h-12 rounded-2xl ia-soft mx-auto flex items-center justify-center"><Icon name="upload" className="w-5 h-5" /></div>
-                          <div className="font-bold text-sm">Wgraj zdjęcie sylwetki</div>
-                          <div className="text-[11px] ia-faint">Ocena 1–10 + analiza braków</div>
-                        </div>
                       )}
-                    </label>
+                    </div>
 
                     {bodyForm.autoAiResult && bodyForm.autoAiResult.verified === false && (
                       <div className="p-3 rounded-2xl border border-rose-500/50 bg-rose-500/10 text-rose-200 text-[11.5px] flex gap-2 ia-pop" data-testid="photo-reject">
@@ -3707,10 +3899,10 @@ export default function App() {
                           <ScoreRing value={bodyForm.autoAiResult.overall} size={64} stroke={6} big={false} />
                           <div className="min-w-0">
                             <div className="text-[10px] font-black uppercase flex items-center gap-1"><Icon name="sparkles" className="w-3 h-3" /> {bodyForm.autoAiResult.source}</div>
-                            <div className="text-[11px] text-white/70 mt-1">V-Taper {bodyForm.autoAiResult.vScore} • Def. (~{bodyForm.autoAiResult.estBf}%) {bodyForm.autoAiResult.defScore} • Ramiona {bodyForm.autoAiResult.armScore}</div>
+                            <div className="text-[11px] text-white/70 mt-1">Średnia z 3 ujęć • V-Taper {bodyForm.autoAiResult.vScore} • Def. (~{bodyForm.autoAiResult.estBf}%) {bodyForm.autoAiResult.defScore} • Ramiona {bodyForm.autoAiResult.armScore}</div>
                           </div>
                         </div>
-                        <div className="text-white pt-2 border-t border-white/10"><VerdictList verdict={bodyForm.autoAiResult.verdict} compact /></div>
+                        <div className="text-white pt-2 border-t border-white/10" data-testid="form-summary"><SetSummary ai={bodyForm.autoAiResult} compact /></div>
                       </div>
                     )}
 
@@ -3721,7 +3913,12 @@ export default function App() {
                       <div><label className="ia-label">Klatka (cm)</label><input type="number" step="0.5" placeholder={currentEnriched.measurements.chest.current} value={bodyForm.chest} onChange={(e) => setBodyForm({ ...bodyForm, chest: e.target.value })} className="ia-input" /></div>
                     </div>
                     <div><label className="ia-label">Komentarz</label><input type="text" placeholder="np. rano na czczo" value={bodyForm.note} onChange={(e) => setBodyForm({ ...bodyForm, note: e.target.value })} className="ia-input" /></div>
-                    <button type="submit" className="ia-btn ia-accent-bg w-full !py-3 text-sm"><Icon name="check" className="w-4 h-4" /> {bodyForm.autoAiResult?.verified === false ? 'Zapisz bez oceny AI' : 'Zapisz zdjęcie w bazie'}</button>
+                    <button type="submit" disabled={isAnalyzingPhoto || !SHOT_VIEWS.every((v) => bodyForm.shots[v.id])} className="ia-btn ia-accent-bg w-full !py-3 text-sm disabled:opacity-50 disabled:pointer-events-none" data-testid="photos-save">
+                      <Icon name="check" className="w-4 h-4" />{' '}
+                      {SHOT_VIEWS.every((v) => bodyForm.shots[v.id])
+                        ? (bodyForm.autoAiResult?.verified === false ? 'Zapisz bez oceny AI' : 'Zapisz zdjęcia w bazie')
+                        : `Dodaj jeszcze ${SHOT_VIEWS.filter((v) => !bodyForm.shots[v.id]).length} z 3 zdjęć`}
+                    </button>
                   </form>
                 )}
               </div>
@@ -3735,6 +3932,8 @@ export default function App() {
                     const displayedPhoto = p.photos?.[currIdx] || p.photos?.[0];
                     const photoEval = evaluatePhysiqueAI(p, currIdx);
                     const verdict = displayedPhoto?.aiVision?.verdict || photoEval.summary;
+                    const shotView = hasShotSet(displayedPhoto) ? (shotViewMap[p.id] || 'front') : 'front';
+                    const setShotView = (id) => setShotViewMap((prev) => ({ ...prev, [p.id]: id }));
                     const reactions = displayedPhoto?.reactions || { dzik: 0, swinia: 0, bocian: 0, podejrzany: 0 };
                     const comments = displayedPhoto?.comments || [];
                     const draft = commentDrafts[displayedPhoto?.id] || '';
@@ -3758,7 +3957,8 @@ export default function App() {
 
                         {displayedPhoto && (
                           <div className="relative bg-black h-72 overflow-hidden">
-                            <img src={displayedPhoto.url} alt={p.name} onClick={() => setLightboxPhoto({ ...displayedPhoto, playerName: p.name })} className="ia-zoom w-full h-full object-cover cursor-zoom-in" />
+                            <img key={shotView} src={shotUrl(displayedPhoto, shotView)} alt={`${p.name} – ${SHOT_VIEWS.find((v) => v.id === shotView)?.label}`} onClick={() => { setLightboxView(shotView); setLightboxPhoto({ ...displayedPhoto, playerName: p.name }); }} className="ia-zoom ia-shot w-full h-full object-cover cursor-zoom-in" />
+                            <ShotTabs photo={displayedPhoto} view={shotView} onView={setShotView} className="absolute bottom-[4.4rem] right-3" />
                             {totalPhotos > 1 && (
                               <div className="absolute top-3 left-3 flex items-center gap-1 bg-black/70 backdrop-blur-md px-2 py-1 rounded-xl text-[11px] font-bold text-white">
                                 <button type="button" disabled={currIdx >= totalPhotos - 1} onClick={() => setPhotoIdxMap((prev) => ({ ...prev, [p.id]: Math.min(totalPhotos - 1, currIdx + 1) }))} className="px-1.5 hover:text-[rgb(var(--ac))] disabled:opacity-30">◀</button>
@@ -3773,7 +3973,7 @@ export default function App() {
                               {totalPhotos > 1 && (
                                 <button type="button" onClick={() => setBaPlayerId(p.id)} className="bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-xl text-[11px] font-bold text-white flex items-center gap-1"><Icon name="columns" className="w-3 h-3" /> Przed/Po</button>
                               )}
-                              <button type="button" onClick={() => setLightboxPhoto({ ...displayedPhoto, playerName: p.name })} className="bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-xl text-[11px] font-bold text-white">Powiększ</button>
+                              <button type="button" onClick={() => { setLightboxView(shotView); setLightboxPhoto({ ...displayedPhoto, playerName: p.name }); }} className="bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-xl text-[11px] font-bold text-white">Powiększ</button>
                             </div>
                             <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/60 to-transparent p-3 pt-10 text-xs text-white pointer-events-none">
                               <div className="flex justify-between font-bold gap-2">
@@ -3809,7 +4009,8 @@ export default function App() {
 
                           <div className="rounded-2xl ia-sub p-3.5 space-y-2">
                             <div className="text-[10px] font-black uppercase tracking-wide ia-accent flex flex-wrap items-center gap-x-2">Analiza i braki • {photoEval.source}{displayedPhoto?.aiVision?.verified === true && <span className="text-emerald-300">✓ sylwetka potwierdzona</span>}{displayedPhoto?.aiVision?.verified === false && <span className="text-rose-300">⚠️ niezweryfikowane</span>}</div>
-                            <VerdictList verdict={verdict} />
+                            <SetSummary ai={displayedPhoto?.aiVision} verdict={verdict} />
+                            {displayedPhoto && !hasShotSet(displayedPhoto) && <div className="text-[10px] ia-faint pt-1">Starsze zdjęcie – tylko jedno ujęcie. Nowe aktualizacje liczymy z trzech: przód, plecy, bok.</div>}
                           </div>
 
                           <div className="space-y-2">
@@ -4143,8 +4344,8 @@ export default function App() {
           {/* ================== ZAKŁADKA: DZIENNIK POSIŁKÓW ================== */}
           {activeTab === 'food' && currentEnriched && (
             <div key="t-food" className="grid grid-cols-1 lg:grid-cols-5 gap-5 ia-cine" data-testid="food-tab">
-              <div className="lg:col-span-2 space-y-5">
-                <div className="ia-glass ia-card p-5 space-y-4 ia-up" data-testid="food-summary">
+              <div className="contents lg:block lg:col-span-2 lg:space-y-5">
+                <div className="ia-glass ia-card p-5 space-y-4 ia-up order-1 lg:order-none" data-testid="food-summary">
                   <div className="flex items-center justify-between gap-2">
                     <button type="button" onClick={() => setMealDay((d) => Math.max(-13, d - 1))} disabled={mealDay <= -13} className="ia-btn ia-ghost !p-2" aria-label="Poprzedni dzień" data-testid="food-prev"><Icon name="arrowLeft" className="w-4 h-4" /></button>
                     <div className="text-center">
@@ -4182,7 +4383,7 @@ export default function App() {
                 </div>
 
                 {!isLocked && (
-                  <div className="ia-glass ia-card p-5 space-y-3 ia-up" data-testid="food-sets">
+                  <div className="ia-glass ia-card p-5 space-y-3 ia-up order-3 lg:order-none" data-testid="food-sets">
                     <div className="flex items-center justify-between gap-2">
                       <h3 className="text-sm font-black uppercase tracking-tight ia-h">Moje zestawy</h3>
                       {canCopyPrev && <button type="button" onClick={copyPrevDay} className="ia-btn ia-ghost !py-1.5 !px-2.5 text-[11px]" data-testid="copy-prev">📋 Skopiuj {mealDay === 0 ? 'wczoraj' : 'dzień wcześniej'} ({Math.round(sumMeals(prevList).kcal)} kcal)</button>}
@@ -4203,7 +4404,7 @@ export default function App() {
                 )}
 
                 {recentMeals.length > 0 && !isLocked && (
-                  <div className="ia-glass ia-card p-5 space-y-3 ia-up" data-testid="food-recent">
+                  <div className="ia-glass ia-card p-5 space-y-3 ia-up order-4 lg:order-none" data-testid="food-recent">
                     <h3 className="text-sm font-black uppercase tracking-tight ia-h">Ostatnio jedzone</h3>
                     <div className="flex flex-wrap gap-1.5">
                       {recentMeals.map((m) => (
@@ -4214,12 +4415,12 @@ export default function App() {
                 )}
               </div>
 
-              <div className="lg:col-span-3 space-y-5">
+              <div className="contents lg:block lg:col-span-3 lg:space-y-5">
                 {!isLocked ? (
-                  <div className="ia-glass ia-card p-5 space-y-4 ia-up" data-testid="food-add">
+                  <div className="ia-glass ia-card p-5 space-y-4 ia-up order-2 lg:order-none" data-testid="food-add">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <h3 className="text-sm font-black uppercase tracking-tight ia-h flex items-center gap-2"><Icon name="utensils" className="w-4 h-4 ia-accent" /> Dodaj posiłek</h3>
-                      <div className="ia-seg text-xs overflow-x-auto ia-scroll max-w-full">
+                      <div className="ia-seg ia-seg-wrap text-xs w-full sm:w-auto">
                         {MEAL_TYPES.map((t) => (<button key={t.id} type="button" onClick={() => setMealType(t.id)} className={mealType === t.id ? 'on' : ''} data-testid={`mealtype-${t.id}`}>{t.icon} {t.label}</button>))}
                       </div>
                     </div>
@@ -4375,10 +4576,10 @@ export default function App() {
                     <p className="text-[10.5px] ia-faint leading-relaxed">Szacunek ze zdjęcia jest orientacyjny – zawsze możesz poprawić gramy i kalorie. Dane produktów pochodzą z Open Food Facts (społecznościowa baza), więc czasem bywają nieprecyzyjne.</p>
                   </div>
                 ) : (
-                  <div className="ia-glass ia-card p-5 text-xs ia-muted ia-up">Przeglądasz dziennik znajomego – wybierz swoje imię (albo odepnij „Mój telefon”), żeby dodawać posiłki.</div>
+                  <div className="ia-glass ia-card p-5 text-xs ia-muted ia-up">Przeglądasz dziennik znajomego – wybierz swoje imię (albo odepnij telefon w menu „Profil” na ekranie głównym), żeby dodawać posiłki.</div>
                 )}
 
-                <div className="ia-glass ia-card p-5 space-y-4 ia-up" data-testid="food-list">
+                <div className="ia-glass ia-card p-5 space-y-4 ia-up order-5 lg:order-none" data-testid="food-list">
                   <h3 className="text-sm font-black uppercase tracking-tight ia-h">Zjedzone — {dayLabel.toLowerCase()}</h3>
                   {dayList.length === 0 && <p className="text-xs ia-muted leading-relaxed">Jeszcze nic nie zapisano. Zrób zdjęcie posiłku, zeskanuj kod kreskowy produktu albo wyszukaj go w bazie.</p>}
                   {MEAL_TYPES.map((t) => {
@@ -4391,7 +4592,7 @@ export default function App() {
                           <div key={m.id} className="ia-sub rounded-xl px-3 py-2 flex items-center justify-between gap-2 text-xs" data-testid="meal-row">
                             <div className="min-w-0">
                               <div className="font-bold truncate">{m.name}</div>
-                              <div className="text-[10px] ia-faint">{m.grams ? `${m.grams} g • ` : ''}B {m.protein} T {m.fat} W {m.carbs}{{ photo: ' • 📸', ai: ' • ✨', set: ' • ⭐', barcode: ' • ▮▮', search: ' • 🔍' }[m.src] || ''}</div>
+                              <div className="text-[10px] ia-faint">{m.grams ? `${m.grams} g • ` : ''}{(m.protein || m.fat || m.carbs) ? `B ${m.protein} T ${m.fat} W ${m.carbs}` : '—'}{{ photo: ' • 📸', ai: ' • ✨', set: ' • ⭐', barcode: ' • ▮▮', search: ' • 🔍' }[m.src] || ''}</div>
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
                               <span className="font-black ia-accent tabular-nums">{m.kcal} kcal</span>
